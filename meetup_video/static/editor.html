@@ -118,7 +118,7 @@ function draw() {
     up.onchange = async () => {
       const f = up.files[0]; if (!f) return;
       const ext = f.name.slice(f.name.lastIndexOf(".")).toLowerCase();
-      const r = await fetch(`/api/upload/${s.id}${ext}`, {method: "POST", body: f});
+      const r = await fetch(`/api/upload/${cur === DEF ? s.id : cur + "_" + s.id}${ext}`, {method: "POST", body: f});
       const j = await r.json();
       if (!r.ok) return say(j.error);
       s.image = j.image; dirty = true; draw(); say("이미지 업로드됨 — 저장을 눌러 주세요");
@@ -154,7 +154,7 @@ async function list() {
   }));
 }
 async function openProject(name) {
-  if (dirty && name !== cur && !confirm("저장하지 않은 변경이 있습니다. 버리고 열까요? / Discard unsaved changes?")) return;
+  if (dirty && !confirm("저장하지 않은 변경이 있습니다. 버리고 열까요? / Discard unsaved changes?")) return;
   cur = name; localStorage.setItem("project", cur); dirty = false;
   cfg = await (await fetch("/api/config" + q())).json(); cfg.ending ||= {}; cfg.video ||= {}; cfg.music ||= {};
   draw(); await list(); say("열림 Opened: " + cur);
