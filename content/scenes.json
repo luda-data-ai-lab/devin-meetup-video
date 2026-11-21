@@ -1,0 +1,43 @@
+{
+  "video": { "width": 1920, "height": 1080, "fps": 30, "accent": "#2DD4BF", "transition_sec": 0.5 },
+  "image_provider": "mock",
+  "ending": {
+    "title": "Devin Meetup Seoul",
+    "date": "2026.12.01",
+    "venue": "최대 120명 · Up to 120 guests",
+    "qr_url": "",
+    "qr_label_ko": "QR 찍고 퀴즈 참여!",
+    "qr_label_en": "Scan to join the quiz"
+  },
+  "scenes": [
+    { "id": "s1_namsan", "duration": 5, "image": "assets/scenes/s1_namsan.png",
+      "prompt": "Dawn over N Seoul Tower; Devin the otter mascot opens his laptop and wakes up",
+      "caption_ko": "서울의 아침", "caption_en": "Good morning, Seoul",
+      "terminal": ["$ devin wake-up --city seoul", "> 부팅 완료 ✓"], "zoom": [1.0, 1.1], "pan": 0 },
+    { "id": "s2_gwanghwamun", "duration": 7, "image": "assets/scenes/s2_gwanghwamun.png",
+      "prompt": "Devin the otter mascot walks across Gwanghwamun Square",
+      "caption_ko": "Devin을 만든 회사, Cognition", "caption_en": "Meet Devin, the AI software engineer by Cognition",
+      "terminal": ["$ devin whoami", "> AI 소프트웨어 엔지니어 ✓"], "zoom": [1.1, 1.0], "pan": 1 },
+    { "id": "s3_myeongdong", "duration": 8, "image": "assets/scenes/s3_myeongdong.png",
+      "prompt": "Myeongdong street at dusk; five companion bots A E R O D join Devin",
+      "caption_ko": "팀 봇 5명 합류", "caption_en": "The bot team joins",
+      "terminal": ["$ devin team --join A E R O D", "> 명동 도착. 붕어빵 1개 구매 ✓"], "zoom": [1.0, 1.12], "pan": 0 },
+    { "id": "s4_subway", "duration": 8, "image": "assets/scenes/s4_subway.png",
+      "prompt": "Seoul subway Line 2; Devin codes on his laptop while bots watch",
+      "caption_ko": "지하철에서도 코딩", "caption_en": "Shipping code on Line 2",
+      "terminal": ["$ devin task \"지하철에서 PR 만들기\"", "> PR #1 opened ✓"], "zoom": [1.12, 1.0], "pan": -1 },
+    { "id": "s5_street_stall", "duration": 8, "image": "assets/scenes/s5_street_stall.png",
+      "prompt": "Convenience store and pojangmacha street stall; bots split up the work",
+      "caption_ko": "일은 나눠서, 빠르게", "caption_en": "Split the work, ship faster",
+      "terminal": ["$ devin plan --parallel 5", "> 5개 작업 동시 진행 중..."], "zoom": [1.0, 1.1], "pan": 1 },
+    { "id": "s6_hangang", "duration": 8, "image": "assets/scenes/s6_hangang.png",
+      "prompt": "Banpo Bridge rainbow fountain at night; team celebrates a merged PR",
+      "caption_ko": "한강에서 머지 축하", "caption_en": "Merged! Celebrating at the Han River",
+      "terminal": ["$ gh pr merge 1", "> Merged ✓ 🎉"], "zoom": [1.1, 1.0], "pan": 0 },
+    { "id": "s7_venue", "duration": 8, "image": "assets/scenes/s7_venue.png",
+      "prompt": "Entrance of the Devin Meetup Seoul venue; bots walk in to a 120-seat hall",
+      "caption_ko": "이제 밋업으로!", "caption_en": "Next stop: the meetup",
+      "terminal": ["$ devin join meetup --seats 120", "> 입장 완료 ✓"], "zoom": [1.0, 1.15], "pan": 0 },
+    { "id": "s8_ending", "type": "ending", "duration": 8 }
+  ]
+}
