@@ -73,3 +73,10 @@ def test_video_scene_requires_path_and_known_sprite():
         config.parse({"scenes": [{"id": "v", "type": "video", "duration": 1}]})
     with pytest.raises(config.ConfigError, match="sprite"):
         config.parse({"scenes": [{"id": "v", "duration": 1, "characters": [{"sprite": "cat"}]}]})
+
+
+def test_ending_qr_toggle(tmp_path):
+    base = {"video": {"width": 320, "height": 180, "fps": 5}, "scenes": [{"id": "e", "type": "ending", "duration": 1}]}
+    off = Renderer(config.parse({**base, "ending": {"title": "T", "qr_url": "https://q.example"}}), cache_dir=tmp_path)
+    on = Renderer(config.parse({**base, "ending": {"title": "T", "qr_url": "https://q.example", "show_qr": True}}), cache_dir=tmp_path)
+    assert off.frame_at(0.9).tobytes() != on.frame_at(0.9).tobytes()

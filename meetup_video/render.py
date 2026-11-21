@@ -260,6 +260,14 @@ class Renderer:
         d.text((left, u(400)), e.get("title", ""), font=fonts.kr(u(110)), fill=(255, 255, 255, int(255 * a)))
         d.text((left, u(560)), e.get("date", ""), font=fonts.kr(u(60)), fill=self.cfg.accent + (int(255 * a),))
         d.text((left, u(680)), e.get("welcome", ""), font=fonts.kr(u(52)), fill=(235, 240, 245, int(255 * a)))
+        if e.get("show_qr") and e.get("qr_url"):
+            import qrcode
+            q = qrcode.make(e["qr_url"], border=2).get_image().convert("RGBA").resize((u(360), u(360)), Image.NEAREST)
+            q.putalpha(int(255 * a))
+            ov.alpha_composite(q, (W - u(520), u(250)))
+            f = fonts.kr(u(40))
+            txt = e.get("qr_label", "")
+            d.text((W - u(340) - d.textlength(txt, font=f) / 2, u(640)), txt, font=f, fill=(255, 255, 255, int(255 * a)))
         return Image.alpha_composite(frame, ov)
 
     # ---------- timeline ----------

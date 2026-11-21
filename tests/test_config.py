@@ -10,7 +10,7 @@ def test_default_config_is_60_seconds_with_ending():
     assert len(cfg.scenes) == 15
     assert cfg.scenes[-1].type == "ending"
     assert cfg.ending["date"] == "2026.12.01"
-    assert cfg.ending["welcome"] and "qr_url" not in cfg.ending
+    assert cfg.ending["welcome"] and cfg.ending["show_qr"] is False
 
 
 def test_rejects_duplicate_ids():

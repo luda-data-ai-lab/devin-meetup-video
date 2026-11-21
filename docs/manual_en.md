@@ -23,7 +23,7 @@ cd D:\01_luda\project\luda-data-ai-lab\devin-meetup-video; python -m meetup_vide
 Open http://127.0.0.1:8765/ in a browser.
 - Edit each scene's captions, terminal lines, duration, zoom, pan and image, then press **Save**. Invalid values (e.g. duration 0) are not saved and show an error.
 - Images: the file picker on a scene card saves to `assets\scenes\<scene id>.png`.
-- Ending: title, date and the welcome line (the opening video has no quiz QR).
+- Ending: title, date and the welcome line (quiz QR is off by default for the opening; tick "Show QR" and set the quiz URL to show a QR code).
 - **Preview** (960x540) / **Final** (1920x1080) render shows progress and plays the result on the page.
 - The "매뉴얼" / "Manual" links in the top menu open this manual.
 

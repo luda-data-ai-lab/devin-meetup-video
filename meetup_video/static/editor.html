@@ -32,12 +32,14 @@ video{width:100%;margin-top:10px;border-radius:8px}
 <script>
 let cfg;
 const $ = s => document.querySelector(s);
-const ENDING = [["title","제목 Title"],["date","날짜 Date"],["welcome","환영 문구 Welcome line"]];
+const ENDING = [["title","제목 Title"],["date","날짜 Date"],["welcome","환영 문구 Welcome line"],["show_qr","QR 표시 Show QR","check"],["qr_url","퀴즈 주소 Quiz URL"],["qr_label","QR 안내 QR label"]];
 function field(obj, key, label, type="text") {
   const w = document.createElement("div");
   w.innerHTML = `<label>${label}</label>`;
   const el = document.createElement(type === "lines" ? "textarea" : "input");
   if (type === "number") { el.type = "number"; el.step = "0.1"; }
+  if (type === "check") { el.type = "checkbox"; el.style.width = "auto"; el.checked = !!obj[key];
+    el.onchange = () => { obj[key] = el.checked; }; w.appendChild(el); return w; }
   el.value = type === "lines" ? (obj[key] || []).join("\n") : (obj[key] ?? "");
   el.dataset.key = key;
   el.oninput = () => {
@@ -48,7 +50,7 @@ function field(obj, key, label, type="text") {
 }
 function total() { $("#total").textContent = "총 " + cfg.scenes.reduce((a, s) => a + Number(s.duration || 0), 0) + "초"; }
 function draw() {
-  $("#ending").replaceChildren(...ENDING.map(([k, l]) => field(cfg.ending, k, l)));
+  $("#ending").replaceChildren(...ENDING.map(([k, l, ty]) => field(cfg.ending, k, l, ty)));
   $("#video").replaceChildren(field(cfg.video, "accent", "강조색 Accent (#RRGGBB)"), field(cfg.video, "transition_sec", "전환(초) Transition", "number"));
   $("#scenes").replaceChildren(...cfg.scenes.map((s, i) => {
     const c = document.createElement("div"); c.className = "card"; c.dataset.scene = s.id;
