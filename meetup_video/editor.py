@@ -1,5 +1,6 @@
 """Local browser editor for content/scenes.json with a render button (stdlib only)."""
 import json
+import os
 import re
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -40,6 +41,7 @@ class RenderJob:
 
 def make_handler(cfg_path, job):
     cfg_path = Path(cfg_path)
+    save_lock = threading.Lock()
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *a):
@@ -91,7 +93,10 @@ def make_handler(cfg_path, job):
                 config.parse(data)
             except (ValueError, TypeError, KeyError) as e:
                 return self.send(400, {"error": str(e)})
-            cfg_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            with save_lock:
+                tmp = cfg_path.with_suffix(".json.tmp")
+                tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                os.replace(tmp, cfg_path)
             self.send(200, {"ok": True})
 
         def do_POST(self):
