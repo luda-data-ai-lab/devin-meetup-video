@@ -148,6 +148,7 @@ def make_handler(cfg_path, job):
             if not self.local_request():
                 return self.send(403, {"error": "forbidden origin"})
             path, _, query = self.path.partition("?")
+            path = urllib.parse.unquote(path)
             if path == "/api/render":
                 try:
                     name, src = project(query)

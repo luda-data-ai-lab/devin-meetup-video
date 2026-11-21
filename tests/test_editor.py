@@ -3,6 +3,7 @@ import shutil
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from http.server import ThreadingHTTPServer
 
@@ -162,3 +163,10 @@ def test_projects_list_survives_missing_default(server):
     cfg.unlink()
     j = json.loads(req(base + "/api/projects")[1])
     assert [p["name"] for p in j["projects"]] == ["closing"]
+
+
+def test_upload_image_for_korean_name(server):
+    base, _, root = server
+    code, body = req(base + "/api/upload/" + urllib.parse.quote("마무리_s01") + ".png", "POST", b"\x89PNG")
+    assert code == 200 and json.loads(body)["image"] == "assets/scenes/마무리_s01.png"
+    assert (root / "assets" / "scenes" / "마무리_s01.png").read_bytes() == b"\x89PNG"
