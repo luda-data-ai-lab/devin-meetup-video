@@ -23,7 +23,7 @@ Devin(공식 마스코트: 갓 쓴 주황 수달)과 팀 봇들이 서울 거리
 - 선택: 이미지 재생성 기능 — 실제 키는 `.env`(James 입력), `.env.example`에는 placeholder만. 개발·테스트는 mock provider.
 
 ## 배경음악
-- 밝고 신나는 상업용 무료 곡(Mixkit 무료 음악 라이선스, 출처 표기 불필요). 기본 곡: One More Dance (Arulo), `assets/music/`
+- 밝고 신나는 상업용 무료 곡(Mixkit 무료 음악 라이선스, 출처 표기 불필요). 기본 곡: A Game (Michael Ramir C., 일렉트로 하우스), `assets/music/`
 - 편집 화면에서 곡 파일 교체(mp3/m4a/wav 업로드), 음량, 시작·끝 페이드, 곡 시작 위치 조절. 파일을 비우면 음악 없음
 - 유명 가요·팝송은 저작권 허락이 따로 필요
 
