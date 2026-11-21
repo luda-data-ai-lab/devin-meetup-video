@@ -128,8 +128,8 @@ class Renderer:
             if self._blur is None:
                 self._blur = FaceBlur(self.cfg.path(FACE_MODEL))
             fr = self._blur(fr)
-        z = scene.zoom[0] + (scene.zoom[1] - scene.zoom[0]) * (t / scene.duration)
-        if abs(z - 1) > 1e-3:
+        z = max(1.0, scene.zoom[0] + (scene.zoom[1] - scene.zoom[0]) * (t / scene.duration))
+        if z > 1.001:
             w, h = self.W / z, self.H / z
             cx = self.W / 2 + scene.pan * (t / scene.duration - 0.5) * self.W * 0.05
             cx = min(max(cx, w / 2), self.W - w / 2)
