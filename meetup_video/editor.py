@@ -11,6 +11,7 @@ from .render import Renderer
 
 STATIC = Path(__file__).resolve().parent / "static"
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp"}
+MUSIC_EXT = {".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".wav": "audio/wav"}
 
 
 class RenderJob:
@@ -85,10 +86,11 @@ def make_handler(cfg_path, job):
             m = re.fullmatch(r"/manual/(ko|en)", path)
             if m:
                 return self.file(config.ROOT / "docs" / f"manual_{m[1]}.md", "text/plain; charset=utf-8")
-            m = re.fullmatch(r"/files/((?:assets/scenes|out)/[\w.\-]+)", path)
+            m = re.fullmatch(r"/files/((?:assets/scenes|assets/music|out)/[\w.\-]+)", path)
             if m:
                 p = config.ROOT / m[1]
-                ctype = "video/mp4" if p.suffix == ".mp4" else f"image/{p.suffix.lstrip('.').replace('jpg', 'jpeg')}"
+                ext = p.suffix.lower()
+                ctype = "video/mp4" if ext == ".mp4" else MUSIC_EXT.get(ext) or f"image/{ext.lstrip('.').replace('jpg', 'jpeg')}"
                 return self.file(p, ctype)
             self.send(404, {"error": "not found"})
 
@@ -118,6 +120,14 @@ def make_handler(cfg_path, job):
                 if not job.start(cfg_path, out, preview):
                     return self.send(409, {"error": "render already running"})
                 return self.send(202, {"ok": True, "output": out})
+            m = re.fullmatch(r"/api/upload-music/([\w\-]+)(\.\w+)", path)
+            if m:
+                if m[2].lower() not in MUSIC_EXT:
+                    return self.send(400, {"error": "mp3/m4a/wav only"})
+                dest = config.ROOT / "assets" / "music" / f"{m[1]}{m[2].lower()}"
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(self.body())
+                return self.send(200, {"ok": True, "file": f"assets/music/{dest.name}"})
             m = re.fullmatch(r"/api/upload/([\w\-]+)(\.\w+)", path)
             if m:
                 if m[2].lower() not in IMAGE_EXT:

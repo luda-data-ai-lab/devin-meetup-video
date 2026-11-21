@@ -26,12 +26,14 @@ video{width:100%;margin-top:10px;border-radius:8px}
 <div id="msg"></div>
 <div class="card" id="status" hidden><b>렌더 Render</b> <span id="prog"></span><video id="vid" controls hidden></video></div>
 <div class="card"><h3>엔딩 · Ending</h3><div class="grid" id="ending"></div></div>
+<div class="card"><h3>배경음악 · Music</h3><div class="grid" id="music"></div></div>
 <div class="card"><h3>영상 · Video</h3><div class="grid" id="video"></div></div>
 <div id="scenes"></div>
 </main>
 <script>
 let cfg;
 const $ = s => document.querySelector(s);
+const MUSIC = [["volume","음량 Volume (0~2, 1=원음)","number"],["fade_in","시작 페이드(초) Fade in","number"],["fade_out","끝 페이드(초) Fade out","number"],["start","곡 시작 위치(초) Start at","number"]];
 const ENDING = [["title","제목 Title"],["date","날짜 Date"],["welcome","환영 문구 Welcome line"],["show_qr","QR 표시 Show QR","check"],["qr_url","퀴즈 주소 Quiz URL"],["qr_label","QR 안내 QR label"]];
 function field(obj, key, label, type="text") {
   const w = document.createElement("div");
@@ -51,6 +53,20 @@ function field(obj, key, label, type="text") {
 function total() { $("#total").textContent = "총 " + cfg.scenes.reduce((a, s) => a + Number(s.duration || 0), 0) + "초"; }
 function draw() {
   $("#ending").replaceChildren(...ENDING.map(([k, l, ty]) => field(cfg.ending, k, l, ty)));
+  const mf = field(cfg.music, "file", "음악 파일 Music file (비우면 음악 없음 / empty = no music)");
+  const mu = document.createElement("input"); mu.type = "file"; mu.accept = "audio/mpeg,audio/mp4,audio/wav,.mp3,.m4a,.wav";
+  mu.onchange = async () => {
+    const f = mu.files[0]; if (!f) return;
+    const dot = f.name.lastIndexOf(".");
+    const name = f.name.slice(0, dot).replace(/[^\w\-]/g, "_") || "music";
+    const r = await fetch(`/api/upload-music/${name}${f.name.slice(dot).toLowerCase()}`, {method: "POST", body: f});
+    const j = await r.json();
+    if (!r.ok) return say(j.error);
+    cfg.music.file = j.file; draw(); say("음악 업로드됨 — 저장을 눌러 주세요");
+  };
+  mf.appendChild(mu);
+  if (cfg.music.file) { const a = document.createElement("audio"); a.controls = true; a.style.width = "100%"; a.src = "/files/" + cfg.music.file; mf.appendChild(a); }
+  $("#music").replaceChildren(mf, ...MUSIC.map(([k, l, ty]) => field(cfg.music, k, l, ty)));
   $("#video").replaceChildren(field(cfg.video, "accent", "강조색 Accent (#RRGGBB)"), field(cfg.video, "transition_sec", "전환(초) Transition", "number"));
   $("#scenes").replaceChildren(...cfg.scenes.map((s, i) => {
     const c = document.createElement("div"); c.className = "card"; c.dataset.scene = s.id;
@@ -98,5 +114,5 @@ async function poll() {
   if (s.output && !s.error) { const v = $("#vid"); v.hidden = false; v.src = "/files/" + s.output + "?" + Date.now(); }
 }
 $("#save").onclick = save; $("#preview").onclick = () => render(true); $("#final").onclick = () => render(false);
-fetch("/api/config").then(r => r.json()).then(j => { cfg = j; cfg.ending ||= {}; cfg.video ||= {}; draw(); });
+fetch("/api/config").then(r => r.json()).then(j => { cfg = j; cfg.ending ||= {}; cfg.video ||= {}; cfg.music ||= {}; draw(); });
 </script></body></html>

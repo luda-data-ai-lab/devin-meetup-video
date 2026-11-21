@@ -42,6 +42,7 @@ class Config:
     image_provider: str
     ending: dict
     scenes: list
+    music: dict
     base_dir: Path
 
     @property
@@ -96,6 +97,7 @@ def parse(data, base_dir=ROOT):
         scenes.append(s)
     if not scenes:
         raise ConfigError("at least one scene is required")
+    music = parse_music(data.get("music") or {})
     return Config(
         width=int(video.get("width", 1920)),
         height=int(video.get("height", 1080)),
@@ -105,5 +107,19 @@ def parse(data, base_dir=ROOT):
         image_provider=data.get("image_provider", "mock"),
         ending=data.get("ending", {}),
         scenes=scenes,
+        music=music,
         base_dir=Path(base_dir),
     )
+
+
+def parse_music(raw):
+    m = {"file": str(raw.get("file") or "")}
+    for key, default, hi in (("volume", 0.8, 2.0), ("fade_in", 0.5, None), ("fade_out", 4.0, None), ("start", 0.0, None)):
+        try:
+            v = float(raw.get(key, default))
+        except (TypeError, ValueError):
+            raise ConfigError(f"music.{key} must be a number")
+        if v < 0 or (hi is not None and v > hi):
+            raise ConfigError(f"music.{key} must be between 0 and {hi}" if hi else f"music.{key} must be >= 0")
+        m[key] = v
+    return m

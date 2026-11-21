@@ -38,3 +38,13 @@ def test_invalid_zoom_rejected(zoom):
     data["scenes"][0]["zoom"] = zoom
     with pytest.raises(config.ConfigError, match="zoom"):
         config.parse(data)
+
+
+def test_music_defaults_and_validation():
+    cfg = config.load()
+    assert cfg.music["file"].startswith("assets/music/") and (config.ROOT / cfg.music["file"]).is_file()
+    assert config.parse({"scenes": [{"id": "a", "duration": 1}]}).music == {
+        "file": "", "volume": 0.8, "fade_in": 0.5, "fade_out": 4.0, "start": 0.0}
+    for bad in ({"volume": 3}, {"fade_out": -1}, {"start": "x"}):
+        with pytest.raises(config.ConfigError, match="music"):
+            config.parse({"music": bad, "scenes": [{"id": "a", "duration": 1}]})

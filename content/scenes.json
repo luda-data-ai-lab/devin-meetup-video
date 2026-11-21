@@ -15,6 +15,13 @@
     "qr_url": "",
     "qr_label": "QR 찍고 퀴즈 참여! · Scan to join the quiz"
   },
+  "music": {
+    "file": "assets/music/one_more_dance.mp3",
+    "volume": 0.8,
+    "fade_in": 0.5,
+    "fade_out": 4.0,
+    "start": 0.0
+  },
   "scenes": [
     {
       "id": "s01_sf_takeoff",

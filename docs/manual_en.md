@@ -24,6 +24,8 @@ Open http://127.0.0.1:8765/ in a browser.
 - Edit each scene's captions, terminal lines, duration, zoom, pan and image, then press **Save**. Invalid values (e.g. duration 0) are not saved and show an error.
 - Images: the file picker on a scene card saves to `assets\scenes\<scene id>.png`.
 - Ending: title, date and the welcome line (quiz QR is off by default for the opening; tick "Show QR" and set the quiz URL to show a QR code).
+- Music: upload an mp3/m4a/wav under "Music file"; it is saved to `assets\music\` and can be played on the page. Set volume (1 = original, default 0.8), fade in (s), fade out (s, ending with the video) and start position in the song (s). Leave the file empty to render without music. If the song is shorter than the video, the rest is silent.
+- Music rights: the default track is Mixkit free music (commercial use, no attribution, https://mixkit.co/license/#musicFree). Well-known songs need the rights holder's permission for event playback.
 - **Preview** (960x540) / **Final** (1920x1080) render shows progress and plays the result on the page.
 - The "매뉴얼" / "Manual" links in the top menu open this manual.
 
@@ -36,6 +38,7 @@ You can also edit `content\scenes.json` by hand.
 - `zoom`: [start, end] zoom, `pan`: horizontal drift (-1 left, 0 none, 1 right)
 - `ending`: ending title, date and `welcome` line
 - `video.accent`: accent color (#RRGGBB)
+- `music`: `file` (music path, empty = no music), `volume` (0-2), `fade_in`, `fade_out` (seconds), `start` (seconds into the song)
 
 ## 4. Logos
 The ending uses the official white Cognition and Devin logos in `assets\brand\`. Replace a file with the same name to change it.

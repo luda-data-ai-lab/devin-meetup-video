@@ -311,6 +311,23 @@ class Renderer:
             fr = Image.blend(self.last_frame(i - 1), fr, t / tr)
         return fr.convert("RGB")
 
+    def music_args(self):
+        m = self.cfg.music
+        if not m["file"]:
+            return []
+        path = self.cfg.path(m["file"])
+        if not path.is_file():
+            raise RuntimeError(f"music file not found: {m['file']}")
+        total = self.cfg.total_duration
+        fo = min(m["fade_out"], total)
+        af = f"volume={m['volume']}"
+        if m["fade_in"] > 0:
+            af += f",afade=t=in:st=0:d={m['fade_in']}"
+        if fo > 0:
+            af += f",afade=t=out:st={total - fo}:d={fo}"
+        return ["-ss", str(m["start"]), "-i", str(path), "-map", "0:v", "-map", "1:a",
+                "-af", af + ",apad", "-c:a", "aac", "-b:a", "192k", "-t", str(total)]
+
     def render(self, out, progress=None):
         if not shutil.which("ffmpeg"):
             raise RuntimeError("ffmpeg not found on PATH")
@@ -318,8 +335,8 @@ class Renderer:
         out.parent.mkdir(parents=True, exist_ok=True)
         n = int(round(self.cfg.total_duration * self.cfg.fps))
         cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{self.W}x{self.H}",
-               "-r", str(self.cfg.fps), "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20",
-               "-movflags", "+faststart", str(out)]
+               "-r", str(self.cfg.fps), "-i", "-", *self.music_args(), "-c:v", "libx264", "-pix_fmt", "yuv420p",
+               "-crf", "20", "-movflags", "+faststart", str(out)]
         ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
         try:
             for f in range(n):
