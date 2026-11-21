@@ -80,3 +80,27 @@ def test_ending_qr_toggle(tmp_path):
     off = Renderer(config.parse({**base, "ending": {"title": "T", "qr_url": "https://q.example"}}), cache_dir=tmp_path)
     on = Renderer(config.parse({**base, "ending": {"title": "T", "qr_url": "https://q.example", "show_qr": True}}), cache_dir=tmp_path)
     assert off.frame_at(0.9).tobytes() != on.frame_at(0.9).tobytes()
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg not installed")
+def test_render_with_music_adds_faded_audio_track(tmp_path):
+    song = tmp_path / "song.wav"
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=1",
+                    str(song)], check=True)
+    cfg = config.parse({
+        "video": {"width": 160, "height": 90, "fps": 5},
+        "music": {"file": str(song), "volume": 0.5, "fade_out": 1},
+        "scenes": [{"id": "a", "duration": 2}],
+    }, base_dir=config.ROOT)
+    out = Renderer(cfg, cache_dir=tmp_path / "cache").render(tmp_path / "m.mp4")
+    probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,duration", "-of", "csv=p=0",
+                            str(out)], capture_output=True, text=True, check=True).stdout.split()
+    kinds = {line.split(",")[0]: float(line.split(",")[1]) for line in probe}
+    assert set(kinds) == {"video", "audio"} and abs(kinds["audio"] - 2) < 0.1
+
+
+def test_missing_music_file_fails_before_encoding(tmp_path):
+    cfg = config.parse({"music": {"file": "assets/music/nope.mp3"}, "scenes": [{"id": "a", "duration": 1}]},
+                       base_dir=tmp_path)
+    with pytest.raises(RuntimeError, match="music file not found"):
+        Renderer(cfg, cache_dir=tmp_path).music_args()

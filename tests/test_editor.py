@@ -65,6 +65,14 @@ def test_upload_image_and_reject_other_types(server):
     assert req(base + "/files/../SPEC.md")[0] == 404
 
 
+def test_upload_music_and_serve_it(server):
+    base, _, root = server
+    code, body = req(base + "/api/upload-music/my_song.MP3", "POST", b"ID3")
+    assert code == 200 and json.loads(body)["file"] == "assets/music/my_song.mp3"
+    assert req(base + "/files/assets/music/my_song.mp3") == (200, b"ID3")
+    assert req(base + "/api/upload-music/x.exe", "POST", b"x")[0] == 400
+
+
 @pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg not installed")
 def test_render_job_reports_progress(tmp_path):
     cfg = tmp_path / "c.json"
