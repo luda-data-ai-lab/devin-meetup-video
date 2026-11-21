@@ -40,7 +40,9 @@ def _kr_index(path):
 @lru_cache(maxsize=None)
 def kr(size):
     p = _first(KR_BOLD)
-    return ImageFont.truetype(p, size, index=_kr_index(p)) if p else ImageFont.load_default(size)
+    if not p:
+        raise RuntimeError("Korean font not found. Ubuntu: sudo apt install fonts-noto-cjk / Windows: Malgun Gothic")
+    return ImageFont.truetype(p, size, index=_kr_index(p))
 
 
 @lru_cache(maxsize=None)

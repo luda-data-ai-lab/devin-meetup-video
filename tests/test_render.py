@@ -40,3 +40,14 @@ def test_render_mp4(tmp_path):
                             "stream=width,height,nb_read_frames", "-of", "csv=p=0", str(out)],
                            capture_output=True, text=True, check=True).stdout.strip()
     assert probe == "320,180,15"
+
+
+def test_missing_korean_font_fails_loudly(monkeypatch):
+    from meetup_video import fonts
+    monkeypatch.setattr(fonts, "KR_BOLD", ["/nonexistent.ttf"])
+    fonts.kr.cache_clear()
+    try:
+        with pytest.raises(RuntimeError, match="Korean font"):
+            fonts.kr(20)
+    finally:
+        fonts.kr.cache_clear()
