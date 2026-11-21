@@ -21,3 +21,10 @@ def test_rejects_bad_duration_and_color():
         config.parse({"scenes": [{"id": "a", "duration": 0}]})
     with pytest.raises(config.ConfigError):
         config.parse({"video": {"accent": "red"}, "scenes": [{"id": "a", "duration": 1}]})
+
+
+def test_config_outside_content_dir_resolves_assets_from_repo_root(tmp_path):
+    alt = tmp_path / "alt.json"
+    alt.write_text(config.DEFAULT_CONFIG.read_text(encoding="utf-8"), encoding="utf-8")
+    cfg = config.load(alt)
+    assert cfg.path("assets/brand/logo_devin_white.png").exists()

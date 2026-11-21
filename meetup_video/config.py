@@ -55,7 +55,7 @@ def hex_color(value):
 def load(path=DEFAULT_CONFIG):
     path = Path(path)
     data = json.loads(path.read_text(encoding="utf-8"))
-    return parse(data, base_dir=path.resolve().parent.parent)
+    return parse(data)
 
 
 def parse(data, base_dir=ROOT):
