@@ -1,5 +1,6 @@
 """Frame composition and MP4 encoding (Pillow + ffmpeg)."""
 import math
+import os
 import shutil
 import subprocess
 import urllib.request
@@ -118,7 +119,9 @@ class Renderer:
                 if not scene.video_url:
                     raise FileNotFoundError(f"scene {scene.id}: {scene.video} not found and no video_url")
                 p.parent.mkdir(parents=True, exist_ok=True)
-                urllib.request.urlretrieve(scene.video_url, p)
+                part = p.with_name(p.name + ".part")
+                urllib.request.urlretrieve(scene.video_url, part)
+                os.replace(part, p)
             self._videos[scene.id] = VideoSource(p, scene.video_start, (self.W, self.H), self.cfg.fps)
         fr = self._videos[scene.id].get(int(t * self.cfg.fps))
         if scene.blur_faces:
