@@ -32,7 +32,7 @@ video{width:100%;margin-top:10px;border-radius:8px}
 <script>
 let cfg;
 const $ = s => document.querySelector(s);
-const ENDING = [["title","제목 Title"],["date","날짜 Date"],["venue","인원·장소 Venue"],["qr_url","퀴즈 주소 Quiz URL"],["qr_label_ko","QR 안내(한) QR label KO"],["qr_label_en","QR 안내(영) QR label EN"]];
+const ENDING = [["title","제목 Title"],["date","날짜 Date"],["welcome","환영 문구 Welcome line"]];
 function field(obj, key, label, type="text") {
   const w = document.createElement("div");
   w.innerHTML = `<label>${label}</label>`;

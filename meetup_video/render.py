@@ -259,17 +259,7 @@ class Renderer:
             x += lg.width
         d.text((left, u(400)), e.get("title", ""), font=fonts.kr(u(110)), fill=(255, 255, 255, int(255 * a)))
         d.text((left, u(560)), e.get("date", ""), font=fonts.kr(u(60)), fill=self.cfg.accent + (int(255 * a),))
-        d.text((left, u(660)), e.get("venue", ""), font=fonts.kr(u(40)), fill=(220, 220, 220, int(255 * a)))
-        q = (W - u(560), u(250), W - u(160), u(650))
-        d.rounded_rectangle(q, u(24), fill=(255, 255, 255, int(235 * a)))
-        qf = fonts.kr(u(64))
-        msg = "QR" if not e.get("qr_url") else "QR ✓"
-        d.text(((q[0] + q[2] - d.textlength(msg, font=qf)) / 2, u(410)), msg, font=qf, fill=(20, 20, 20, int(255 * a)))
-        for i, key in enumerate(("qr_label_ko", "qr_label_en")):
-            f = fonts.kr(u(44 if i == 0 else 30))
-            txt = e.get(key, "")
-            d.text(((q[0] + q[2] - d.textlength(txt, font=f)) / 2, u(680 + i * 64)), txt, font=f,
-                   fill=(255, 255, 255, int(255 * a)))
+        d.text((left, u(680)), e.get("welcome", ""), font=fonts.kr(u(52)), fill=(235, 240, 245, int(255 * a)))
         return Image.alpha_composite(frame, ov)
 
     # ---------- timeline ----------

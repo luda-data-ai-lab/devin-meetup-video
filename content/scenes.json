@@ -10,10 +10,7 @@
   "ending": {
     "title": "Devin Meetup Seoul",
     "date": "2026.12.01",
-    "venue": "최대 120명 · Up to 120 guests",
-    "qr_url": "",
-    "qr_label_ko": "QR 찍고 퀴즈 참여!",
-    "qr_label_en": "Scan to join the quiz"
+    "welcome": "Devin Meetup Seoul에 오신 걸 환영합니다"
   },
   "scenes": [
     {
