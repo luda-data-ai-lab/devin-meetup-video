@@ -8,6 +8,22 @@ header h1{font-size:20px;margin:0;flex:1}
 h3{font-size:18px;margin:0 0 12px;color:#ffffff}
 nav a{color:#2dd4bf;margin-left:12px;text-decoration:none}
 main{max-width:1100px;margin:0 auto;padding:20px}
+.layout{display:flex;max-width:1340px;margin:0 auto}
+aside{width:230px;flex:none;padding:20px 0 20px 20px;position:sticky;top:64px;align-self:flex-start}
+aside h3{font-size:15px;color:#9aa6bd;margin:0 0 10px}
+.plist{display:flex;flex-direction:column;gap:6px}
+.plist button{background:#151b2c;color:#e8ecf2;border:1px solid #2a3350;text-align:left;font-weight:600;padding:10px 12px}
+.plist button.on{border-color:#2dd4bf;background:#12302d;color:#ffffff}
+.badge{display:inline-block;font-size:11px;border-radius:4px;padding:1px 6px;margin-left:6px;background:#2a3350;color:#cfd6e4}
+.badge.qr{background:#5b3fd1;color:#fff}
+#saveas{width:100%;margin-top:10px}
+main{flex:1;min-width:0}
+@media (max-width:700px){
+ .layout{display:block}
+ aside{width:auto;position:static;padding:12px 12px 0}
+ .plist{flex-direction:row;overflow-x:auto;padding-bottom:4px}
+ .plist button{flex:none}
+}
 .card{background:#151b2c;border:1px solid #2a3350;border-radius:12px;padding:16px;margin-bottom:16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
 .grid.scene{grid-template-columns:repeat(3,1fr)}
@@ -31,6 +47,9 @@ video{width:100%;margin-top:10px;border-radius:8px}
 <span id="total"></span>
 <button id="save">저장 Save</button><button id="preview" class="alt">미리보기 렌더 Preview</button><button id="final" class="alt">최종 렌더 Final</button>
 <nav><a href="/manual/ko" target="_blank">매뉴얼</a><a href="/manual/en" target="_blank">Manual</a></nav></header>
+<div class="layout">
+<aside><h3>저장 목록 · Saved</h3><div class="plist" id="plist"></div>
+<button id="saveas" class="alt">+ 새 이름으로 저장 Save as</button></aside>
 <main>
 <div id="msg"></div>
 <div class="card" id="status" hidden><b>렌더 Render</b> <span id="prog"></span><video id="vid" controls hidden></video></div>
@@ -39,8 +58,9 @@ video{width:100%;margin-top:10px;border-radius:8px}
 <div class="card"><h3>영상 · Video</h3><div class="grid" id="video"></div></div>
 <div id="scenes"></div>
 </main>
+</div>
 <script>
-let cfg;
+let cfg, cur = localStorage.getItem("project") || "", dirty = false;
 const $ = s => document.querySelector(s);
 const MUSIC = [["volume","음량 Volume (0~2, 1=원음)","number"],["fade_in","시작 페이드(초) Fade in","number"],["fade_out","끝 페이드(초) Fade out","number"],["start","곡 시작 위치(초) Start at","number"]];
 const ENDING = [["title","제목 Title"],["date","날짜 Date"],["welcome","환영 문구 Welcome line"],["show_qr","QR 표시 Show QR","check"],["qr_url","퀴즈 주소 Quiz URL"],["qr_label","QR 안내 QR label"]];
@@ -50,12 +70,12 @@ function field(obj, key, label, type="text") {
   const el = document.createElement(type === "lines" ? "textarea" : "input");
   if (type === "number") { el.type = "number"; el.step = "0.1"; }
   if (type === "check") { el.type = "checkbox"; el.style.width = "auto"; el.checked = !!obj[key];
-    el.onchange = () => { obj[key] = el.checked; }; w.appendChild(el); return w; }
+    el.onchange = () => { obj[key] = el.checked; dirty = true; }; w.appendChild(el); return w; }
   el.value = type === "lines" ? (obj[key] || []).join("\n") : (obj[key] ?? "");
   el.dataset.key = key;
   el.oninput = () => {
     obj[key] = type === "lines" ? el.value.split("\n").filter(x => x.trim()) : type === "number" ? Number(el.value) : el.value;
-    total();
+    total(); dirty = true;
   };
   w.appendChild(el); return w;
 }
@@ -71,7 +91,7 @@ function draw() {
     const r = await fetch(`/api/upload-music/${name}${f.name.slice(dot).toLowerCase()}`, {method: "POST", body: f});
     const j = await r.json();
     if (!r.ok) return say(j.error);
-    cfg.music.file = j.file; draw(); say("음악 업로드됨 — 저장을 눌러 주세요");
+    cfg.music.file = j.file; dirty = true; draw(); say("음악 업로드됨 — 저장을 눌러 주세요");
   };
   mf.className = "wide";
   const row = document.createElement("div"); row.className = "filerow"; row.appendChild(mu);
@@ -101,7 +121,7 @@ function draw() {
       const r = await fetch(`/api/upload/${s.id}${ext}`, {method: "POST", body: f});
       const j = await r.json();
       if (!r.ok) return say(j.error);
-      s.image = j.image; draw(); say("이미지 업로드됨 — 저장을 눌러 주세요");
+      s.image = j.image; dirty = true; draw(); say("이미지 업로드됨 — 저장을 눌러 주세요");
     };
     im.appendChild(up);
     if (s.image) { const t = document.createElement("img"); t.className = "thumb"; t.src = "/files/" + s.image + "?" + Date.now(); t.onerror = () => t.remove(); im.appendChild(t); }
@@ -110,13 +130,38 @@ function draw() {
   total();
 }
 function say(t) { $("#msg").textContent = t; }
-async function save() {
-  const r = await fetch("/api/config", {method: "PUT", body: JSON.stringify(cfg)});
-  const j = await r.json(); say(r.ok ? "저장됨 Saved" : "오류 Error: " + j.error); return r.ok;
+const q = (extra = "") => "?name=" + encodeURIComponent(cur) + extra;
+async function save(name = cur) {
+  const r = await fetch("/api/config?name=" + encodeURIComponent(name), {method: "PUT", body: JSON.stringify(cfg)});
+  const j = await r.json();
+  if (!r.ok) { say("오류 Error: " + j.error); return false; }
+  cur = name; localStorage.setItem("project", cur); dirty = false;
+  say("저장됨 Saved: " + cur); await list(); return true;
+}
+async function saveAs() {
+  const name = (prompt("새 이름 (예: opening, closing) / New name", cur === DEF ? "closing" : cur + "_2") || "").trim();
+  if (name) await save(name);
+}
+let DEF = "";
+async function list() {
+  const j = await (await fetch("/api/projects")).json(); DEF = j.default;
+  if (!j.projects.some(p => p.name === cur)) cur = DEF;
+  $("#plist").replaceChildren(...j.projects.map(p => {
+    const b = document.createElement("button"); b.className = p.name === cur ? "on" : "";
+    b.innerHTML = `${p.name}${p.name === DEF ? '<span class="badge">기본</span>' : ""}<span class="badge${p.qr ? " qr" : ""}">QR ${p.qr ? "켬" : "끔"}</span>`;
+    b.onclick = () => openProject(p.name);
+    return b;
+  }));
+}
+async function openProject(name) {
+  if (dirty && name !== cur && !confirm("저장하지 않은 변경이 있습니다. 버리고 열까요? / Discard unsaved changes?")) return;
+  cur = name; localStorage.setItem("project", cur); dirty = false;
+  cfg = await (await fetch("/api/config" + q())).json(); cfg.ending ||= {}; cfg.video ||= {}; cfg.music ||= {};
+  draw(); await list(); say("열림 Opened: " + cur);
 }
 async function render(preview) {
   if (!await save()) return;
-  const r = await fetch("/api/render" + (preview ? "?preview=1" : ""), {method: "POST"});
+  const r = await fetch("/api/render" + q(preview ? "&preview=1" : ""), {method: "POST"});
   const j = await r.json(); if (!r.ok) return say(j.error);
   $("#status").hidden = false; poll();
 }
@@ -126,6 +171,6 @@ async function poll() {
   if (s.running) return setTimeout(poll, 1000);
   if (s.output && !s.error) { const v = $("#vid"); v.hidden = false; v.src = "/files/" + s.output + "?" + Date.now(); }
 }
-$("#save").onclick = save; $("#preview").onclick = () => render(true); $("#final").onclick = () => render(false);
-fetch("/api/config").then(r => r.json()).then(j => { cfg = j; cfg.ending ||= {}; cfg.video ||= {}; cfg.music ||= {}; draw(); });
+$("#save").onclick = () => save(); $("#saveas").onclick = saveAs; $("#preview").onclick = () => render(true); $("#final").onclick = () => render(false);
+list().then(() => openProject(cur));
 </script></body></html>
