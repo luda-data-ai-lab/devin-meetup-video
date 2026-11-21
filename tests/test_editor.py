@@ -153,3 +153,12 @@ def test_default_config_with_any_file_name(tmp_path):
         assert [p["name"] for p in json.loads(req(base + "/api/projects")[1])["projects"]] == ["opening.v2"]
     finally:
         srv.shutdown()
+
+
+def test_projects_list_survives_missing_default(server):
+    base, cfg, _ = server
+    data = json.loads(req(base + "/api/config")[1])
+    assert req(base + "/api/config?name=closing", "PUT", json.dumps(data).encode())[0] == 200
+    cfg.unlink()
+    j = json.loads(req(base + "/api/projects")[1])
+    assert [p["name"] for p in j["projects"]] == ["closing"]

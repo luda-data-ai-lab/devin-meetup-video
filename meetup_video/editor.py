@@ -102,7 +102,7 @@ def make_handler(cfg_path, job):
                 for p in sorted({cfg_path, *(p for p in content.glob("*.json") if NAME.fullmatch(p.stem))}):
                     try:
                         qr = bool(json.loads(p.read_text(encoding="utf-8")).get("ending", {}).get("show_qr"))
-                    except ValueError:
+                    except (OSError, ValueError):
                         continue
                     items.append({"name": p.stem, "qr": qr})
                 items.sort(key=lambda i: (i["name"] != default, i["name"]))
