@@ -1,3 +1,4 @@
+import json
 import pytest
 
 from meetup_video import config
@@ -28,3 +29,11 @@ def test_config_outside_content_dir_resolves_assets_from_repo_root(tmp_path):
     alt.write_text(config.DEFAULT_CONFIG.read_text(encoding="utf-8"), encoding="utf-8")
     cfg = config.load(alt)
     assert cfg.path("assets/brand/logo_devin_white.png").exists()
+
+
+@pytest.mark.parametrize("zoom", [[0, 1.1], [1.0], ["", 1.1]])
+def test_invalid_zoom_rejected(zoom):
+    data = json.loads(config.DEFAULT_CONFIG.read_text(encoding="utf-8"))
+    data["scenes"][0]["zoom"] = zoom
+    with pytest.raises(config.ConfigError, match="zoom"):
+        config.parse(data)
