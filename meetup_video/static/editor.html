@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Devin Meetup Seoul · 영상 편집</title>
+<style>
+body{font-family:"Malgun Gothic","Noto Sans KR",sans-serif;margin:0;background:#0f1320;color:#e8ecf2}
+header{display:flex;gap:16px;align-items:center;padding:12px 20px;background:#151b2c;border-bottom:1px solid #2a3350;position:sticky;top:0;z-index:2;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;flex:1}
+nav a{color:#2dd4bf;margin-left:12px;text-decoration:none}
+main{max-width:1100px;margin:0 auto;padding:20px}
+.card{background:#151b2c;border:1px solid #2a3350;border-radius:12px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+label{display:block;font-size:12px;color:#9aa6bd}
+input,textarea{width:100%;box-sizing:border-box;background:#0b0f1a;color:#e8ecf2;border:1px solid #2a3350;border-radius:6px;padding:6px;font:inherit}
+textarea{font-family:Consolas,monospace;min-height:58px}
+button{background:#2dd4bf;color:#05211d;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
+button.alt{background:#2a3350;color:#e8ecf2}
+.thumb{max-width:220px;border-radius:6px;display:block;margin-top:6px}
+#msg{min-height:20px;color:#ffd666}
+video{width:100%;margin-top:10px;border-radius:8px}
+</style></head><body>
+<header><h1>Devin Meetup Seoul · 영상 편집 <small>(Video editor)</small></h1>
+<span id="total"></span>
+<button id="save">저장 Save</button><button id="preview" class="alt">미리보기 렌더 Preview</button><button id="final" class="alt">최종 렌더 Final</button>
+<nav><a href="/manual/ko" target="_blank">매뉴얼</a><a href="/manual/en" target="_blank">Manual</a></nav></header>
+<main>
+<div id="msg"></div>
+<div class="card" id="status" hidden><b>렌더 Render</b> <span id="prog"></span><video id="vid" controls hidden></video></div>
+<div class="card"><h3>엔딩 · Ending</h3><div class="grid" id="ending"></div></div>
+<div class="card"><h3>영상 · Video</h3><div class="grid" id="video"></div></div>
+<div id="scenes"></div>
+</main>
+<script>
+let cfg;
+const $ = s => document.querySelector(s);
+const ENDING = [["title","제목 Title"],["date","날짜 Date"],["venue","인원·장소 Venue"],["qr_url","퀴즈 주소 Quiz URL"],["qr_label_ko","QR 안내(한) QR label KO"],["qr_label_en","QR 안내(영) QR label EN"]];
+function field(obj, key, label, type="text") {
+  const w = document.createElement("div");
+  w.innerHTML = `<label>${label}</label>`;
+  const el = document.createElement(type === "lines" ? "textarea" : "input");
+  if (type === "number") { el.type = "number"; el.step = "0.1"; }
+  el.value = type === "lines" ? (obj[key] || []).join("\n") : (obj[key] ?? "");
+  el.dataset.key = key;
+  el.oninput = () => {
+    obj[key] = type === "lines" ? el.value.split("\n").filter(x => x.trim()) : type === "number" ? Number(el.value) : el.value;
+    total();
+  };
+  w.appendChild(el); return w;
+}
+function total() { $("#total").textContent = "총 " + cfg.scenes.reduce((a, s) => a + Number(s.duration || 0), 0) + "초"; }
+function draw() {
+  $("#ending").replaceChildren(...ENDING.map(([k, l]) => field(cfg.ending, k, l)));
+  $("#video").replaceChildren(field(cfg.video, "accent", "강조색 Accent (#RRGGBB)"), field(cfg.video, "transition_sec", "전환(초) Transition", "number"));
+  $("#scenes").replaceChildren(...cfg.scenes.map((s, i) => {
+    const c = document.createElement("div"); c.className = "card"; c.dataset.scene = s.id;
+    c.innerHTML = `<h3>${i + 1}. ${s.id}${s.type === "ending" ? " (엔딩)" : ""}</h3>`;
+    const g = document.createElement("div"); g.className = "grid";
+    g.append(field(s, "duration", "시간(초) Duration", "number"));
+    if (s.type !== "ending") {
+      g.append(field(s, "caption_ko", "자막(한) Caption KO"), field(s, "caption_en", "자막(영) Caption EN"),
+               field(s, "terminal", "터미널 줄 Terminal lines", "lines"));
+      const z = {z0: s.zoom?.[0] ?? 1, z1: s.zoom?.[1] ?? 1.1};
+      const zf = (k, l) => { const f = field(z, k, l, "number"); f.querySelector("input").addEventListener("input", () => s.zoom = [Number(z.z0), Number(z.z1)]); return f; };
+      g.append(zf("z0", "확대 시작 Zoom start"), zf("z1", "확대 끝 Zoom end"), field(s, "pan", "좌우 이동 Pan (-1~1)", "number"));
+    }
+    const im = field(s, "image", "이미지 경로 Image");
+    const up = document.createElement("input"); up.type = "file"; up.accept = "image/png,image/jpeg,image/webp";
+    up.onchange = async () => {
+      const f = up.files[0]; if (!f) return;
+      const ext = f.name.slice(f.name.lastIndexOf(".")).toLowerCase();
+      const r = await fetch(`/api/upload/${s.id}${ext}`, {method: "POST", body: f});
+      const j = await r.json();
+      if (!r.ok) return say(j.error);
+      s.image = j.image; draw(); say("이미지 업로드됨 — 저장을 눌러 주세요");
+    };
+    im.appendChild(up);
+    if (s.image) { const t = document.createElement("img"); t.className = "thumb"; t.src = "/files/" + s.image + "?" + Date.now(); t.onerror = () => t.remove(); im.appendChild(t); }
+    g.append(im); c.append(g); return c;
+  }));
+  total();
+}
+function say(t) { $("#msg").textContent = t; }
+async function save() {
+  const r = await fetch("/api/config", {method: "PUT", body: JSON.stringify(cfg)});
+  const j = await r.json(); say(r.ok ? "저장됨 Saved" : "오류 Error: " + j.error); return r.ok;
+}
+async function render(preview) {
+  if (!await save()) return;
+  const r = await fetch("/api/render" + (preview ? "?preview=1" : ""), {method: "POST"});
+  const j = await r.json(); if (!r.ok) return say(j.error);
+  $("#status").hidden = false; poll();
+}
+async function poll() {
+  const s = await (await fetch("/api/status")).json();
+  $("#prog").textContent = s.error ? "오류 " + s.error : s.running ? s.progress + "%" : s.output ? "완료 " + s.output : "";
+  if (s.running) return setTimeout(poll, 1000);
+  if (s.output && !s.error) { const v = $("#vid"); v.hidden = false; v.src = "/files/" + s.output + "?" + Date.now(); }
+}
+$("#save").onclick = save; $("#preview").onclick = () => render(true); $("#final").onclick = () => render(false);
+fetch("/api/config").then(r => r.json()).then(j => { cfg = j; cfg.ending ||= {}; cfg.video ||= {}; draw(); });
+</script></body></html>

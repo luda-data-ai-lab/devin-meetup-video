@@ -74,7 +74,12 @@ def parse(data, base_dir=ROOT):
             raise ConfigError(f"scene {raw['id']}: type must be image or ending")
         s = Scene(**{k: v for k, v in raw.items() if k in Scene.__dataclass_fields__})
         s.duration = float(s.duration)
-        s.zoom = tuple(s.zoom)
+        try:
+            s.zoom = tuple(float(z) for z in s.zoom)
+        except (TypeError, ValueError):
+            s.zoom = ()
+        if len(s.zoom) != 2 or min(s.zoom) <= 0:
+            raise ConfigError(f"scene {raw['id']}: zoom must be two numbers > 0")
         scenes.append(s)
     if not scenes:
         raise ConfigError("at least one scene is required")

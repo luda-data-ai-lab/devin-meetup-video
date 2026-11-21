@@ -28,9 +28,15 @@ def main(argv=None):
     s.add_argument("--config", default=str(config.DEFAULT_CONFIG))
     s.add_argument("--at", type=float, required=True, help="time in seconds")
     s.add_argument("--out", default="out/still.png")
+    e = sub.add_parser("edit", help="open the browser editor")
+    e.add_argument("--config", default=str(config.DEFAULT_CONFIG))
+    e.add_argument("--port", type=int, default=8765)
     a = ap.parse_args(argv)
 
     load_env(config.ROOT / ".env")
+    if a.cmd == "edit":
+        from .editor import serve
+        return serve(a.config, port=a.port)
     cfg = config.load(a.config)
     if getattr(a, "preview", False):
         cfg.width, cfg.height, cfg.fps = 960, 540, 15
