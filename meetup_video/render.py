@@ -1,6 +1,8 @@
 """Frame composition and MP4 encoding (Pillow + ffmpeg)."""
+import math
 import shutil
 import subprocess
+import urllib.request
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -10,6 +12,73 @@ from .providers import get_provider
 
 TYPE_CPS = 22
 BRAND = {"cognition": "assets/brand/logo_cognition_white.png", "devin": "assets/brand/logo_devin_white.png"}
+
+
+SPRITE_FILES = {"devin": "assets/characters/devin.png", "bots": "assets/characters/bots.png"}
+FACE_MODEL = "assets/models/yunet.onnx"
+
+
+class VideoSource:
+    """Sequential ffmpeg reader that returns cover-fit RGB frames; seeks by restarting."""
+
+    def __init__(self, path, start, size, fps):
+        self.path, self.start, self.size, self.fps = str(path), start, size, fps
+        self.proc, self.next, self.frame = None, 0, None
+
+    def _open(self, idx):
+        self.close()
+        w, h = self.size
+        vf = f"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},fps={self.fps}"
+        self.proc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-ss", str(self.start + idx / self.fps), "-i", self.path,
+                                      "-vf", vf, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE,
+                                     stderr=subprocess.DEVNULL)
+        self.next = idx
+
+    def get(self, idx):
+        if self.proc is None or idx < self.next - 1 or idx > self.next + self.fps:
+            self._open(idx)
+        n = self.size[0] * self.size[1] * 3
+        while self.next <= idx:
+            b = self.proc.stdout.read(n)
+            if len(b) < n:
+                break
+            self.frame = Image.frombytes("RGB", self.size, b)
+            self.next += 1
+        if self.frame is None:
+            raise RuntimeError(f"no frames decoded from {self.path}")
+        return self.frame
+
+    def close(self):
+        if self.proc:
+            self.proc.kill()
+            self.proc.wait()
+            self.proc = None
+
+
+class FaceBlur:
+    def __init__(self, model):
+        try:
+            import cv2
+            import numpy as np
+        except ImportError as e:
+            raise RuntimeError("blur_faces needs opencv-python-headless (pip install -r requirements.txt)") from e
+        self.cv2, self.np = cv2, np
+        self.det = cv2.FaceDetectorYN.create(str(model), "", (320, 320), 0.6)
+
+    def __call__(self, img):
+        cv2, np = self.cv2, self.np
+        a = np.array(img)
+        h, w = a.shape[:2]
+        self.det.setInputSize((w, h))
+        _, faces = self.det.detect(cv2.cvtColor(a, cv2.COLOR_RGB2BGR))
+        for row in ([] if faces is None else faces):
+            x, y, fw, fh = (int(v) for v in row[:4])
+            p = int(0.35 * max(fw, fh))
+            x0, y0, x1, y1 = max(0, x - p), max(0, y - p), min(w, x + fw + p), min(h, y + fh + p)
+            if x1 > x0 and y1 > y0:
+                k = max(15, (max(x1 - x0, y1 - y0) // 2) | 1)
+                a[y0:y1, x0:x1] = cv2.GaussianBlur(a[y0:y1, x0:x1], (k, k), 0)
+        return Image.fromarray(a)
 
 
 class Renderer:
@@ -22,6 +91,9 @@ class Renderer:
         self._bases = {}
         self._logos = {}
         self._last = {}
+        self._videos = {}
+        self._sprites = {}
+        self._blur = None
 
     def u(self, v):
         return int(round(v * self.k))
@@ -39,7 +111,59 @@ class Renderer:
         self._bases[scene.id] = img
         return img
 
+    def video_frame(self, scene, t):
+        if scene.id not in self._videos:
+            p = self.cfg.path(scene.video)
+            if not p.exists():
+                if not scene.video_url:
+                    raise FileNotFoundError(f"scene {scene.id}: {scene.video} not found and no video_url")
+                p.parent.mkdir(parents=True, exist_ok=True)
+                urllib.request.urlretrieve(scene.video_url, p)
+            self._videos[scene.id] = VideoSource(p, scene.video_start, (self.W, self.H), self.cfg.fps)
+        fr = self._videos[scene.id].get(int(t * self.cfg.fps))
+        if scene.blur_faces:
+            if self._blur is None:
+                self._blur = FaceBlur(self.cfg.path(FACE_MODEL))
+            fr = self._blur(fr)
+        z = scene.zoom[0] + (scene.zoom[1] - scene.zoom[0]) * (t / scene.duration)
+        if abs(z - 1) > 1e-3:
+            w, h = self.W / z, self.H / z
+            cx = self.W / 2 + scene.pan * (t / scene.duration - 0.5) * self.W * 0.05
+            cx = min(max(cx, w / 2), self.W - w / 2)
+            fr = fr.crop((int(cx - w / 2), int((self.H - h) / 2), int(cx + w / 2), int((self.H + h) / 2))).resize((self.W, self.H), Image.BILINEAR)
+        return fr.convert("RGBA")
+
+    def sprite(self, name):
+        if name not in self._sprites:
+            im = Image.open(self.cfg.path(SPRITE_FILES[name])).convert("RGBA")
+            solid = im.getchannel("A").point(lambda v: 255 if v > 16 else 0)
+            self._sprites[name] = im.crop(solid.getbbox())
+        return self._sprites[name]
+
+    def characters(self, frame, scene, t):
+        if not scene.characters:
+            return frame
+        u = min(1.0, t / scene.duration)
+        e = u * u * (3 - 2 * u)
+        for i, c in enumerate(scene.characters):
+            x0, x1 = c.get("x", [0.5, 0.5])
+            h0, h1 = c.get("h", [0.4, 0.4])
+            cx, h = (x0 + (x1 - x0) * e) * self.W, (h0 + (h1 - h0) * e) * self.H
+            feet = c.get("y", 0.95) * self.H
+            sp = self.sprite(c["sprite"])
+            im = sp.resize((max(1, int(sp.width * h / sp.height)), max(1, int(h))), Image.BILINEAR)
+            if c.get("walk", True):
+                im = im.rotate(math.sin(2 * math.pi * 0.8 * t + i) * 3, resample=Image.BICUBIC, expand=True)
+            bob = abs(math.sin(2 * math.pi * 1.6 * t + i)) * h * 0.025 if c.get("walk", True) else 0
+            sh = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+            ImageDraw.Draw(sh).ellipse((cx - im.width * 0.38, feet - h * 0.03, cx + im.width * 0.38, feet + h * 0.03), fill=(0, 0, 0, 120))
+            frame = Image.alpha_composite(frame, sh)
+            frame.alpha_composite(im, (int(cx - im.width / 2), int(feet - im.height - bob)))
+        return frame
+
     def camera(self, scene, t):
+        if scene.type == "video":
+            return self.video_frame(scene, t * scene.duration)
         base = self.base(scene)
         z0, z1 = scene.zoom
         z = z0 + (z1 - z0) * t
@@ -166,6 +290,7 @@ class Renderer:
                 bg = Image.new("RGBA", (self.W, self.H), (8, 10, 20, 255))
             return self.ending(bg, t)
         fr = self.camera(scene, t / scene.duration)
+        fr = self.characters(fr, scene, t)
         fr = self.captions(fr, scene, t)
         return self.terminal(fr, scene.terminal, t)
 
@@ -203,6 +328,8 @@ class Renderer:
         finally:
             ff.stdin.close()
             ff.wait()
+            for v in self._videos.values():
+                v.close()
         if ff.returncode:
             raise RuntimeError(f"ffmpeg failed ({ff.returncode})")
         return out

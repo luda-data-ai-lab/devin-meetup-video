@@ -1,5 +1,11 @@
 {
-  "video": { "width": 1920, "height": 1080, "fps": 30, "accent": "#2DD4BF", "transition_sec": 0.5 },
+  "video": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "accent": "#2DD4BF",
+    "transition_sec": 0.5
+  },
   "image_provider": "mock",
   "ending": {
     "title": "Devin Meetup Seoul",
@@ -10,34 +16,326 @@
     "qr_label_en": "Scan to join the quiz"
   },
   "scenes": [
-    { "id": "s1_namsan", "duration": 5, "image": "assets/scenes/s1_namsan.png",
-      "prompt": "Dawn over N Seoul Tower; Devin the otter mascot opens his laptop and wakes up",
-      "caption_ko": "서울의 아침", "caption_en": "Good morning, Seoul",
-      "terminal": ["$ devin wake-up --city seoul", "> 부팅 완료 ✓"], "zoom": [1.0, 1.1], "pan": 0 },
-    { "id": "s2_gwanghwamun", "duration": 7, "image": "assets/scenes/s2_gwanghwamun.png",
-      "prompt": "Devin the otter mascot walks across Gwanghwamun Square",
-      "caption_ko": "Devin을 만든 회사, Cognition", "caption_en": "Meet Devin, the AI software engineer by Cognition",
-      "terminal": ["$ devin whoami", "> AI 소프트웨어 엔지니어 ✓"], "zoom": [1.1, 1.0], "pan": 1 },
-    { "id": "s3_myeongdong", "duration": 8, "image": "assets/scenes/s3_myeongdong.png",
-      "prompt": "Myeongdong street at dusk; five companion bots A E R O D join Devin",
-      "caption_ko": "팀 봇 5명 합류", "caption_en": "The bot team joins",
-      "terminal": ["$ devin team --join A E R O D", "> 명동 도착. 붕어빵 1개 구매 ✓"], "zoom": [1.0, 1.12], "pan": 0 },
-    { "id": "s4_subway", "duration": 8, "image": "assets/scenes/s4_subway.png",
-      "prompt": "Seoul subway Line 2; Devin codes on his laptop while bots watch",
-      "caption_ko": "지하철에서도 코딩", "caption_en": "Shipping code on Line 2",
-      "terminal": ["$ devin task \"지하철에서 PR 만들기\"", "> PR #1 opened ✓"], "zoom": [1.12, 1.0], "pan": -1 },
-    { "id": "s5_street_stall", "duration": 8, "image": "assets/scenes/s5_street_stall.png",
-      "prompt": "Convenience store and pojangmacha street stall; bots split up the work",
-      "caption_ko": "일은 나눠서, 빠르게", "caption_en": "Split the work, ship faster",
-      "terminal": ["$ devin plan --parallel 5", "> 5개 작업 동시 진행 중..."], "zoom": [1.0, 1.1], "pan": 1 },
-    { "id": "s6_hangang", "duration": 8, "image": "assets/scenes/s6_hangang.png",
-      "prompt": "Banpo Bridge rainbow fountain at night; team celebrates a merged PR",
-      "caption_ko": "한강에서 머지 축하", "caption_en": "Merged! Celebrating at the Han River",
-      "terminal": ["$ gh pr merge 1", "> Merged ✓ 🎉"], "zoom": [1.1, 1.0], "pan": 0 },
-    { "id": "s7_venue", "duration": 8, "image": "assets/scenes/s7_venue.png",
-      "prompt": "Entrance of the Devin Meetup Seoul venue; bots walk in to a 120-seat hall",
-      "caption_ko": "이제 밋업으로!", "caption_en": "Next stop: the meetup",
-      "terminal": ["$ devin join meetup --seats 120", "> 입장 완료 ✓"], "zoom": [1.0, 1.15], "pan": 0 },
-    { "id": "s8_ending", "type": "ending", "duration": 8 }
+    {
+      "id": "s01_sf_takeoff",
+      "duration": 5,
+      "image": "assets/scenes/s01_sf_takeoff.jpg",
+      "caption_ko": "샌프란시스코 Cognition 본사에서 출발!",
+      "caption_en": "Departing Cognition HQ, San Francisco",
+      "terminal": [
+        "$ devin fly --from SF --to ICN",
+        "> 서울행 탑승 완료 ✈"
+      ],
+      "zoom": [
+        1.0,
+        1.1
+      ],
+      "pan": 1.0
+    },
+    {
+      "id": "s02_incheon",
+      "duration": 6,
+      "image": "assets/scenes/s02_incheon.jpg",
+      "caption_ko": "인천공항 도착, 안녕 서울!",
+      "caption_en": "Landed at Incheon. Hello, Seoul!",
+      "terminal": [
+        "$ devin land --airport ICN",
+        "> 팀 봇 5명 합류 ✓"
+      ],
+      "zoom": [
+        1.08,
+        1.0
+      ],
+      "pan": -1.0
+    },
+    {
+      "id": "s03_arex",
+      "duration": 5,
+      "image": "assets/scenes/s03_arex.jpg",
+      "caption_ko": "공항철도 타고 서울로",
+      "caption_en": "Airport express into the city",
+      "terminal": [
+        "$ devin plan --city seoul",
+        "> 오늘 일정 7곳 ✓"
+      ],
+      "zoom": [
+        1.0,
+        1.1
+      ],
+      "pan": 0.0
+    },
+    {
+      "id": "s04_skyline",
+      "type": "video",
+      "duration": 5,
+      "video": "assets/footage/39437.mp4",
+      "video_url": "https://assets.mixkit.co/videos/39437/39437-720.mp4",
+      "video_start": 0.5,
+      "blur_faces": false,
+      "caption_ko": "Welcome to Seoul",
+      "caption_en": "서울의 하루가 시작됩니다",
+      "terminal": [],
+      "zoom": [
+        1.0,
+        1.1
+      ],
+      "pan": 0.0,
+      "characters": []
+    },
+    {
+      "id": "s05_gyeongbokgung",
+      "type": "video",
+      "duration": 6,
+      "video": "assets/footage/20095.mp4",
+      "video_url": "https://assets.mixkit.co/videos/20095/20095-720.mp4",
+      "video_start": 0.3,
+      "blur_faces": true,
+      "caption_ko": "경복궁 · 광화문",
+      "caption_en": "Gyeongbokgung Palace",
+      "terminal": [
+        "$ devin explore --spot 경복궁",
+        "> 광화문 도착 ✓"
+      ],
+      "zoom": [
+        1.0,
+        1.05
+      ],
+      "pan": 0.0,
+      "characters": [
+        {
+          "sprite": "bots",
+          "x": [
+            1.2,
+            0.78
+          ],
+          "h": [
+            0.3,
+            0.3
+          ],
+          "y": 0.97,
+          "walk": false
+        },
+        {
+          "sprite": "devin",
+          "x": [
+            0.4,
+            0.52
+          ],
+          "h": [
+            0.5,
+            0.52
+          ],
+          "y": 0.97
+        }
+      ]
+    },
+    {
+      "id": "s06_bukchon",
+      "duration": 6,
+      "image": "assets/scenes/s06_bukchon.jpg",
+      "caption_ko": "북촌 한옥마을에서 코드 리뷰",
+      "caption_en": "Code review in Bukchon Hanok Village",
+      "terminal": [
+        "$ devin review --pr 42",
+        "> LGTM ✓ 승인 5/5"
+      ],
+      "zoom": [
+        1.0,
+        1.1
+      ],
+      "pan": 0.0
+    },
+    {
+      "id": "s07_cheonggyecheon",
+      "type": "video",
+      "duration": 6,
+      "video": "assets/footage/20096.mp4",
+      "video_url": "https://assets.mixkit.co/videos/20096/20096-720.mp4",
+      "video_start": 0.0,
+      "blur_faces": true,
+      "caption_ko": "청계천 산책 중 버그 발견!",
+      "caption_en": "A bug spotted by Cheonggyecheon",
+      "terminal": [
+        "$ devin debug --trace",
+        "> 원인 찾음: off-by-one ✓"
+      ],
+      "zoom": [
+        1.0,
+        1.05
+      ],
+      "pan": 0.0,
+      "characters": [
+        {
+          "sprite": "devin",
+          "x": [
+            0.62,
+            0.55
+          ],
+          "h": [
+            0.12,
+            0.6
+          ],
+          "y": 0.98
+        }
+      ]
+    },
+    {
+      "id": "s08_myeongdong",
+      "type": "video",
+      "duration": 6,
+      "video": "assets/footage/22363.mp4",
+      "video_url": "https://assets.mixkit.co/videos/22363/22363-720.mp4",
+      "video_start": 2.0,
+      "blur_faces": true,
+      "caption_ko": "명동 · 종로, 봇들이 동시에 작업",
+      "caption_en": "Bots working in parallel downtown",
+      "terminal": [
+        "$ devin spawn --sessions 5",
+        "> 병렬 세션 5개 실행 중..."
+      ],
+      "zoom": [
+        1.0,
+        1.05
+      ],
+      "pan": 0.0,
+      "characters": [
+        {
+          "sprite": "bots",
+          "x": [
+            0.95,
+            0.78
+          ],
+          "h": [
+            0.34,
+            0.36
+          ],
+          "y": 0.97,
+          "walk": false
+        },
+        {
+          "sprite": "devin",
+          "x": [
+            0.42,
+            0.52
+          ],
+          "h": [
+            0.5,
+            0.5
+          ],
+          "y": 0.97
+        }
+      ]
+    },
+    {
+      "id": "s09_line2",
+      "duration": 6,
+      "image": "assets/scenes/s09_line2.jpg",
+      "caption_ko": "지하철 2호선, 테스트 통과!",
+      "caption_en": "Line 2 subway: all tests passed",
+      "terminal": [
+        "$ devin test --all",
+        "> 128 passed ✓"
+      ],
+      "zoom": [
+        1.0,
+        1.1
+      ],
+      "pan": 0.0
+    },
+    {
+      "id": "s10_namsan",
+      "duration": 6,
+      "image": "assets/scenes/s10_namsan.jpg",
+      "caption_ko": "남산 N서울타워에서 단체 셀카",
+      "caption_en": "Group selfie at N Seoul Tower",
+      "terminal": [
+        "$ devin snap --team",
+        "> 추억 저장 완료 ✓"
+      ],
+      "zoom": [
+        1.0,
+        1.08
+      ],
+      "pan": 1.0
+    },
+    {
+      "id": "s11_lotte",
+      "type": "video",
+      "duration": 6,
+      "video": "assets/footage/30161.mp4",
+      "video_url": "https://assets.mixkit.co/videos/30161/30161-720.mp4",
+      "video_start": 4.0,
+      "blur_faces": false,
+      "caption_ko": "롯데월드타워처럼 높이 확장",
+      "caption_en": "Scaling up like Lotte World Tower",
+      "terminal": [
+        "$ devin deploy --prod",
+        "> 배포 완료 🚀"
+      ],
+      "zoom": [
+        1.0,
+        1.12
+      ],
+      "pan": 0.0,
+      "characters": []
+    },
+    {
+      "id": "s12_hangang_ramen",
+      "duration": 6,
+      "image": "assets/scenes/s12_hangang_ramen.jpg",
+      "caption_ko": "한강 라면으로 PR 머지 축하",
+      "caption_en": "Han River ramen: PR merged!",
+      "terminal": [
+        "$ gh pr merge 42",
+        "> merged 🎉"
+      ],
+      "zoom": [
+        1.0,
+        1.1
+      ],
+      "pan": 0.0
+    },
+    {
+      "id": "s13_hangang_night",
+      "type": "video",
+      "duration": 6,
+      "video": "assets/footage/30113.mp4",
+      "video_url": "https://assets.mixkit.co/videos/30113/30113-720.mp4",
+      "video_start": 0.0,
+      "blur_faces": false,
+      "caption_ko": "한강의 밤, 이제 밋업으로",
+      "caption_en": "Han River nights, on to the meetup",
+      "terminal": [
+        "$ devin go --to meetup",
+        "> 도착 예정 5분 ✓"
+      ],
+      "zoom": [
+        1.0,
+        1.08
+      ],
+      "pan": 0.0,
+      "characters": []
+    },
+    {
+      "id": "s14_venue",
+      "duration": 7,
+      "image": "assets/scenes/s14_venue.jpg",
+      "caption_ko": "Devin Meetup Seoul에 오신 걸 환영합니다",
+      "caption_en": "Welcome to Devin Meetup Seoul",
+      "terminal": [
+        "$ devin welcome --guests 120",
+        "> 입장 준비 완료 ✓"
+      ],
+      "zoom": [
+        1.06,
+        1.0
+      ],
+      "pan": 0.0
+    },
+    {
+      "id": "s15_ending",
+      "type": "ending",
+      "duration": 8
+    }
   ]
 }

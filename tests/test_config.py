@@ -6,8 +6,8 @@ from meetup_video import config
 
 def test_default_config_is_60_seconds_with_ending():
     cfg = config.load()
-    assert cfg.total_duration == 60
-    assert len(cfg.scenes) == 8
+    assert cfg.total_duration == 90
+    assert len(cfg.scenes) == 15
     assert cfg.scenes[-1].type == "ending"
     assert cfg.ending["date"] == "2026.12.01"
 
