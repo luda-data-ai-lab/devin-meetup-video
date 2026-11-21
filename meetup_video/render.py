@@ -12,6 +12,11 @@ from . import fonts
 from .providers import get_provider
 
 TYPE_CPS = 22
+
+
+def is_hangul(c):
+    o = ord(c)
+    return 0x1100 <= o <= 0x11FF or 0x3130 <= o <= 0x318F or 0xAC00 <= o <= 0xD7AF
 BRAND = {"cognition": "assets/brand/logo_cognition_white.png", "devin": "assets/brand/logo_devin_white.png"}
 
 
@@ -185,11 +190,18 @@ class Renderer:
         return self._logos[name, h]
 
     # ---------- overlays ----------
+    def text_width(self, text, size):
+        img = Image.new("RGBA", (1, 1))
+        return self.draw_mixed(ImageDraw.Draw(img), (0, 0), text, (0, 0, 0), size)
+
     def draw_mixed(self, d, xy, text, fill, size):
         x, y = xy
-        m, kf = fonts.mono(size), fonts.kr(size - 2)
-        for c in text:
-            f = kf if ord(c) >= 0x1100 else m
+        m, kf, sf = fonts.mono(size), fonts.kr(size), fonts.symbol(size)
+        kr = [is_hangul(c) for c in text]
+        for i, c in enumerate(text):
+            near_kr = c == " " and ((i > 0 and kr[i - 1]) or (i + 1 < len(text) and kr[i + 1]))
+            o = ord(c)
+            f = kf if kr[i] or near_kr or o >= 0x2E80 else sf if o >= 0x2000 else m
             d.text((x, y), c, font=f, fill=fill)
             x += f.getlength(c)
         return x
@@ -200,24 +212,26 @@ class Renderer:
         u, a = self.u, self.cfg.accent
         ov = Image.new("RGBA", frame.size, (0, 0, 0, 0))
         d = ImageDraw.Draw(ov)
-        x0, y0 = u(70), u(1010) - u(70) - u(52) * len(lines)
-        x1, y1 = u(900), u(1010)
-        d.rounded_rectangle((x0, y0, x1, y1), u(22), fill=(12, 16, 22, 215), outline=a + (255,), width=max(1, u(3)))
+        size, step = u(42), u(64)
+        width = max(self.text_width(ln, size) for ln in lines)
+        x0, y0 = u(60), u(1020) - u(80) - step * len(lines)
+        x1, y1 = min(self.W - u(60), x0 + max(u(860), width + u(90))), u(1020)
+        d.rounded_rectangle((x0, y0, x1, y1), u(22), fill=(8, 11, 16, 235), outline=a + (255,), width=max(1, u(3)))
         for i, c in enumerate([(255, 95, 86), (255, 189, 46), (39, 201, 63)]):
             d.ellipse((x0 + u(24 + i * 34), y0 + u(20), x0 + u(46 + i * 34), y0 + u(42)), fill=c)
-        d.text((x0 + u(140), y0 + u(14)), "devin@seoul ~", font=fonts.mono(u(26)), fill=(150, 160, 170))
+        d.text((x0 + u(140), y0 + u(14)), "devin@seoul ~", font=fonts.mono(u(28)), fill=(185, 195, 205))
         shown = int(max(0.0, t - 0.4) * TYPE_CPS)
-        y = y0 + u(70)
+        y = y0 + u(72)
         for i, ln in enumerate(lines):
             if shown <= 0 and i > 0:
                 break
             part = ln[:max(0, shown)]
-            col = (235, 240, 245) if ln.startswith("$") else (120, 240, 200)
-            xe = self.draw_mixed(d, (x0 + u(28), y), part, col, u(32))
+            col = (255, 255, 255) if ln.startswith("$") else (140, 255, 215)
+            xe = self.draw_mixed(d, (x0 + u(30), y), part, col, size)
             if shown <= len(ln):
-                d.rectangle((xe + u(4), y + u(4), xe + u(22), y + u(40)), fill=a + (255,))
+                d.rectangle((xe + u(4), y + u(6), xe + u(26), y + u(50)), fill=a + (255,))
             shown -= len(ln)
-            y += u(52)
+            y += step
         return Image.alpha_composite(frame, ov)
 
     def captions(self, frame, scene, t):

@@ -9,6 +9,11 @@ KR_BOLD = [
     "C:/Windows/Fonts/malgunbd.ttf",
     "/System/Library/Fonts/AppleSDGothicNeo.ttc",
 ]
+SYMBOL = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "C:/Windows/Fonts/seguisym.ttf",
+    "/System/Library/Fonts/Apple Symbols.ttf",
+]
 MONO_BOLD = [
     str(Path.home() / ".local/share/fonts/JetBrainsMono-Bold.ttf"),
     "/usr/share/fonts/truetype/jetbrains-mono/JetBrainsMono-Bold.ttf",
@@ -49,3 +54,9 @@ def kr(size):
 def mono(size):
     p = _first(MONO_BOLD)
     return ImageFont.truetype(p, size) if p else ImageFont.load_default(size)
+
+
+@lru_cache(maxsize=None)
+def symbol(size):
+    p = _first(SYMBOL)
+    return ImageFont.truetype(p, size) if p else kr(size)

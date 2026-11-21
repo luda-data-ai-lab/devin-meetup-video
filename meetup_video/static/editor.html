@@ -4,14 +4,19 @@
 <style>
 body{font-family:"Malgun Gothic","Noto Sans KR",sans-serif;margin:0;background:#0f1320;color:#e8ecf2}
 header{display:flex;gap:16px;align-items:center;padding:12px 20px;background:#151b2c;border-bottom:1px solid #2a3350;position:sticky;top:0;z-index:2;flex-wrap:wrap}
-header h1{font-size:18px;margin:0;flex:1}
+header h1{font-size:20px;margin:0;flex:1}
+h3{font-size:18px;margin:0 0 12px;color:#ffffff}
 nav a{color:#2dd4bf;margin-left:12px;text-decoration:none}
 main{max-width:1100px;margin:0 auto;padding:20px}
 .card{background:#151b2c;border:1px solid #2a3350;border-radius:12px;padding:16px;margin-bottom:16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-label{display:block;font-size:12px;color:#9aa6bd}
-input,textarea{width:100%;box-sizing:border-box;background:#0b0f1a;color:#e8ecf2;border:1px solid #2a3350;border-radius:6px;padding:6px;font:inherit}
-textarea{font-family:Consolas,monospace;min-height:58px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.grid.scene{grid-template-columns:repeat(3,1fr)}
+.wide{grid-column:1/-1}
+@media (max-width:700px){.grid.scene{grid-template-columns:1fr}}
+label{display:block;font-size:14px;font-weight:600;color:#dde3ee;margin-bottom:4px}
+input,textarea{width:100%;box-sizing:border-box;background:#0b0f1a;color:#ffffff;border:1px solid #3a4566;border-radius:6px;padding:8px;font:inherit;font-size:15px}
+input[type=file]{color:#dde3ee;border:0;padding:6px 0}
+textarea{font-family:"Malgun Gothic","Noto Sans KR",sans-serif;font-size:16px;line-height:1.6;min-height:84px;resize:vertical}
 button{background:#2dd4bf;color:#05211d;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
 button.alt{background:#2a3350;color:#e8ecf2}
 .thumb{max-width:220px;border-radius:6px;display:block;margin-top:6px}
@@ -71,16 +76,18 @@ function draw() {
   $("#scenes").replaceChildren(...cfg.scenes.map((s, i) => {
     const c = document.createElement("div"); c.className = "card"; c.dataset.scene = s.id;
     c.innerHTML = `<h3>${i + 1}. ${s.id}${s.type === "ending" ? " (엔딩)" : ""}</h3>`;
-    const g = document.createElement("div"); g.className = "grid";
+    const g = document.createElement("div"); g.className = "grid scene";
     g.append(field(s, "duration", "시간(초) Duration", "number"));
     if (s.type !== "ending") {
-      g.append(field(s, "caption_ko", "자막(한) Caption KO"), field(s, "caption_en", "자막(영) Caption EN"),
-               field(s, "terminal", "터미널 줄 Terminal lines", "lines"));
+      g.append(field(s, "caption_ko", "자막(한) Caption KO"), field(s, "caption_en", "자막(영) Caption EN"));
       const z = {z0: s.zoom?.[0] ?? 1, z1: s.zoom?.[1] ?? 1.1};
       const zf = (k, l) => { const f = field(z, k, l, "number"); f.querySelector("input").addEventListener("input", () => s.zoom = [Number(z.z0), Number(z.z1)]); return f; };
       g.append(zf("z0", "확대 시작 Zoom start"), zf("z1", "확대 끝 Zoom end"), field(s, "pan", "좌우 이동 Pan (-1~1)", "number"));
+      const tf = field(s, "terminal", "터미널 줄 Terminal lines (한 줄에 하나, $로 시작하면 명령 / one per line, $ = command)", "lines");
+      tf.className = "wide"; tf.querySelector("textarea").rows = Math.max(3, (s.terminal || []).length + 1);
+      g.append(tf);
     }
-    const im = field(s, "image", "이미지 경로 Image");
+    const im = field(s, "image", "이미지 경로 Image"); im.className = "wide";
     const up = document.createElement("input"); up.type = "file"; up.accept = "image/png,image/jpeg,image/webp";
     up.onchange = async () => {
       const f = up.files[0]; if (!f) return;

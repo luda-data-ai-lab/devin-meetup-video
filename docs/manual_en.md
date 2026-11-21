@@ -21,7 +21,7 @@ Output goes to the `out\` folder.
 cd D:\01_luda\project\luda-data-ai-lab\devin-meetup-video; python -m meetup_video edit --port 8765
 ```
 Open http://127.0.0.1:8765/ in a browser.
-- Edit each scene's captions, terminal lines, duration, zoom, pan and image, then press **Save**. Invalid values (e.g. duration 0) are not saved and show an error.
+- Edit each scene's captions, terminal lines, duration, zoom, pan and image, then press **Save**. The terminal lines box is full width below zoom and pan; write one line per row. Invalid values (e.g. duration 0) are not saved and show an error.
 - Images: the file picker on a scene card saves to `assets\scenes\<scene id>.png`.
 - Ending: title, date and the welcome line (quiz QR is off by default for the opening; tick "Show QR" and set the quiz URL to show a QR code).
 - Music: upload an mp3/m4a/wav under "Music file"; it is saved to `assets\music\` and can be played on the page. Set volume (1 = original, default 0.8), fade in (s), fade out (s, ending with the video) and start position in the song (s). Leave the file empty to render without music. If the song is shorter than the video, the rest is silent.
