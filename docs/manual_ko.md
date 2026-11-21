@@ -12,6 +12,7 @@ PowerShell을 새로 열어 `ffmpeg -version`이 나오면 준비 완료입니�
 |---|---|
 | 빠른 미리보기 (960x540, 1~2분) | `python -m meetup_video render --preview --out out\preview.mp4` |
 | 최종 영상 (1920x1080, 약 60초) | `python -m meetup_video render --out out\devin-meetup-seoul.mp4` |
+| 다른 이름의 설정으로 렌더 | `python -m meetup_video render --config content\closing.json --out out\devin-meetup-seoul-closing.mp4` |
 | 특정 순간 한 장 저장 | `python -m meetup_video still --at 12.5 --out out\still.png` |
 
 결과는 `out\` 폴더에 저장됩니다.
@@ -21,8 +22,9 @@ PowerShell을 새로 열어 `ffmpeg -version`이 나오면 준비 완료입니�
 cd D:\01_luda\project\luda-data-ai-lab\devin-meetup-video; python -m meetup_video edit --port 8765
 ```
 브라우저에서 http://127.0.0.1:8765/ 를 엽니다.
+- 저장 목록(왼쪽): 저장해 둔 설정 이름이 보이고, 누르면 그 설정을 엽니다. **저장**은 지금 연 이름에 덮어쓰고, **+ 새 이름으로 저장**은 이름(글자·숫자·_·-, 40자 이내)을 정해 새로 저장합니다. 예: 기본(`scenes`)은 오프닝용 QR 끔, `closing`은 "QR 표시"를 켠 마무리용. 설정은 `content\<이름>.json`, 최종 렌더 영상은 `out\devin-meetup-seoul-<이름>.mp4`(기본은 `out\devin-meetup-seoul.mp4`)로 따로 저장됩니다. 필요 없는 설정은 `content\` 폴더에서 그 파일을 지우면 목록에서 사라집니다.
 - 장면별 자막·터미널 줄·시간·확대·이동·이미지를 고치고 **저장**을 누릅니다. 터미널 줄 칸은 확대·이동 칸 아래에 한 줄 전체 폭으로 있고, 한 줄에 하나씩 씁니다. 잘못된 값(시간 0 등)은 저장되지 않고 오류가 표시됩니다.
-- 이미지: 장면 카드의 파일 선택으로 올리면 `assets\scenes\<장면id>.png`로 저장됩니다.
+- 이미지: 장면 카드의 파일 선택으로 올리면 `assets\scenes\<장면id>.png`로 저장됩니다(기본이 아닌 이름으로 연 설정은 `<이름>_<장면id>.png`라 원본 이미지를 덮어쓰지 않음).
 - 엔딩: 제목·날짜·환영 문구를 고칩니다 (오프닝 영상이라 퀴즈 QR은 기본으로 끔. 마무리 때 쓰려면 "QR 표시"를 켜고 퀴즈 주소를 넣으면 QR 코드가 나옵니다).
 - 배경음악: "음악 파일"에서 mp3/m4a/wav를 올리면 `assets\music\`에 저장되고 화면에서 바로 들어볼 수 있습니다. 음량(1=원음, 기본 0.8), 시작 페이드(초), 끝 페이드(초, 영상 끝에 맞춰 줄어듦), 곡 시작 위치(초)를 고칩니다. 파일 칸을 비우면 음악 없이 렌더합니다. 곡이 영상보다 짧으면 남은 부분은 무음입니다.
 - 음악 저작권: 기본 곡은 A Game(Michael Ramir C.), Mixkit 무료 음악(상업 사용 가능, 출처 표기 불필요, https://mixkit.co/license/#musicFree)입니다. 유명 가요·팝송은 저작권자 허락(행사 공연 사용) 없이 쓰면 안 됩니다.
