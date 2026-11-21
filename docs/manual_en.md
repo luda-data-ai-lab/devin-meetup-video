@@ -16,8 +16,19 @@ Open a new PowerShell; if `ffmpeg -version` prints a version you are ready.
 
 Output goes to the `out\` folder.
 
-## 3. Change copy, timing and images
-Edit only `content\scenes.json` (an editor screen arrives in step 3).
+## 3. Editor screen (recommended)
+```powershell
+cd D:\01_luda\project\luda-data-ai-lab\devin-meetup-video; python -m meetup_video edit --port 8765
+```
+Open http://127.0.0.1:8765/ in a browser.
+- Edit each scene's captions, terminal lines, duration, zoom, pan and image, then press **Save**. Invalid values (e.g. duration 0) are not saved and show an error.
+- Images: the file picker on a scene card saves to `assets\scenes\<scene id>.png`.
+- Ending: title, date, headcount, quiz URL (QR) and labels.
+- **Preview** (960x540) / **Final** (1920x1080) render shows progress and plays the result on the page.
+- The "매뉴얼" / "Manual" links in the top menu open this manual.
+
+## 3-1. Edit the file directly
+You can also edit `content\scenes.json` by hand.
 - `caption_ko` / `caption_en`: captions at the top of the screen
 - `terminal`: lines typed in the bottom-left terminal (`$` lines are white commands, others green results)
 - `duration`: scene length in seconds
