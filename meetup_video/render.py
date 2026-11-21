@@ -200,7 +200,8 @@ class Renderer:
         kr = [is_hangul(c) for c in text]
         for i, c in enumerate(text):
             near_kr = c == " " and ((i > 0 and kr[i - 1]) or (i + 1 < len(text) and kr[i + 1]))
-            f = kf if kr[i] or near_kr else sf if ord(c) >= 0x2000 else m
+            o = ord(c)
+            f = kf if kr[i] or near_kr or o >= 0x2E80 else sf if o >= 0x2000 else m
             d.text((x, y), c, font=f, fill=fill)
             x += f.getlength(c)
         return x
