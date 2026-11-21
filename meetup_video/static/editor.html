@@ -11,11 +11,15 @@ main{max-width:1100px;margin:0 auto;padding:20px}
 .card{background:#151b2c;border:1px solid #2a3350;border-radius:12px;padding:16px;margin-bottom:16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
 .grid.scene{grid-template-columns:repeat(3,1fr)}
+.grid.four{grid-template-columns:repeat(4,1fr)}
 .wide{grid-column:1/-1}
-@media (max-width:700px){.grid.scene{grid-template-columns:1fr}}
+@media (max-width:700px){.grid.scene,.grid.four{grid-template-columns:1fr}}
 label{display:block;font-size:14px;font-weight:600;color:#dde3ee;margin-bottom:4px}
 input,textarea{width:100%;box-sizing:border-box;background:#0b0f1a;color:#ffffff;border:1px solid #3a4566;border-radius:6px;padding:8px;font:inherit;font-size:15px}
-input[type=file]{color:#dde3ee;border:0;padding:6px 0}
+input[type=file]{color:#dde3ee;background:transparent;border:0;padding:6px 0;width:auto}
+input[type=file]::file-selector-button{background:#2a3350;color:#ffffff;border:1px solid #3a4566;border-radius:6px;padding:6px 12px;margin-right:10px;font:inherit;cursor:pointer}
+.filerow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.filerow audio{flex:1;min-width:240px;height:40px}
 textarea{font-family:"Malgun Gothic","Noto Sans KR",sans-serif;font-size:16px;line-height:1.6;min-height:84px;resize:vertical}
 button{background:#2dd4bf;color:#05211d;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
 button.alt{background:#2a3350;color:#e8ecf2}
@@ -31,7 +35,7 @@ video{width:100%;margin-top:10px;border-radius:8px}
 <div id="msg"></div>
 <div class="card" id="status" hidden><b>렌더 Render</b> <span id="prog"></span><video id="vid" controls hidden></video></div>
 <div class="card"><h3>엔딩 · Ending</h3><div class="grid" id="ending"></div></div>
-<div class="card"><h3>배경음악 · Music</h3><div class="grid" id="music"></div></div>
+<div class="card"><h3>배경음악 · Music</h3><div class="grid four" id="music"></div></div>
 <div class="card"><h3>영상 · Video</h3><div class="grid" id="video"></div></div>
 <div id="scenes"></div>
 </main>
@@ -69,8 +73,10 @@ function draw() {
     if (!r.ok) return say(j.error);
     cfg.music.file = j.file; draw(); say("음악 업로드됨 — 저장을 눌러 주세요");
   };
-  mf.appendChild(mu);
-  if (cfg.music.file) { const a = document.createElement("audio"); a.controls = true; a.style.width = "100%"; a.src = "/files/" + cfg.music.file; mf.appendChild(a); }
+  mf.className = "wide";
+  const row = document.createElement("div"); row.className = "filerow"; row.appendChild(mu);
+  if (cfg.music.file) { const a = document.createElement("audio"); a.controls = true; a.src = "/files/" + cfg.music.file; row.appendChild(a); }
+  mf.appendChild(row);
   $("#music").replaceChildren(mf, ...MUSIC.map(([k, l, ty]) => field(cfg.music, k, l, ty)));
   $("#video").replaceChildren(field(cfg.video, "accent", "강조색 Accent (#RRGGBB)"), field(cfg.video, "transition_sec", "전환(초) Transition", "number"));
   $("#scenes").replaceChildren(...cfg.scenes.map((s, i) => {
