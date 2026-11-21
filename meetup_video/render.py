@@ -1,7 +1,6 @@
 """Frame composition and MP4 encoding (Pillow + ffmpeg)."""
 import shutil
 import subprocess
-from functools import lru_cache
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -21,6 +20,7 @@ class Renderer:
         self.cache_dir = Path(cache_dir or cfg.path("out/cache"))
         self.provider = get_provider(cfg.image_provider)
         self._bases = {}
+        self._logos = {}
         self._last = {}
 
     def u(self, v):
@@ -51,10 +51,11 @@ class Renderer:
         box = (int(cx - w / 2), int(cy - h / 2), int(cx - w / 2 + w), int(cy - h / 2 + h))
         return base.crop(box).resize((self.W, self.H), Image.BILINEAR).convert("RGBA")
 
-    @lru_cache(maxsize=None)
     def logo(self, name, h):
-        im = Image.open(self.cfg.path(BRAND[name])).convert("RGBA")
-        return im.resize((max(1, int(im.width * h / im.height)), h), Image.LANCZOS)
+        if (name, h) not in self._logos:
+            im = Image.open(self.cfg.path(BRAND[name])).convert("RGBA")
+            self._logos[name, h] = im.resize((max(1, int(im.width * h / im.height)), h), Image.LANCZOS)
+        return self._logos[name, h]
 
     # ---------- overlays ----------
     def draw_mixed(self, d, xy, text, fill, size):
