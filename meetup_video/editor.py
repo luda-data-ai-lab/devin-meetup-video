@@ -55,6 +55,8 @@ def make_handler(cfg_path, job):
 
     def project(query):
         name = urllib.parse.parse_qs(query).get("name", [default])[0]
+        if name == default:
+            return name, cfg_path
         if not NAME.fullmatch(name):
             raise ValueError("이름은 글자·숫자·_·- 40자 이내 / name: letters, digits, _ or -, up to 40")
         return name, content / f"{name}.json"
@@ -97,9 +99,7 @@ def make_handler(cfg_path, job):
                 return self.file(STATIC / "editor.html", "text/html; charset=utf-8")
             if path == "/api/projects":
                 items = []
-                for p in sorted(content.glob("*.json")):
-                    if not NAME.fullmatch(p.stem):
-                        continue
+                for p in sorted({cfg_path, *(p for p in content.glob("*.json") if NAME.fullmatch(p.stem))}):
                     try:
                         qr = bool(json.loads(p.read_text(encoding="utf-8")).get("ending", {}).get("show_qr"))
                     except ValueError:

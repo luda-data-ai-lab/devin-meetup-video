@@ -139,3 +139,17 @@ def test_render_uses_project_name(tmp_path):
     assert calls == [("scenes.json", "out/devin-meetup-seoul.mp4", False),
                      ("closing.json", "out/devin-meetup-seoul-closing.mp4", False),
                      ("closing.json", "out/preview-closing.mp4", True)]
+
+
+def test_default_config_with_any_file_name(tmp_path):
+    cfg = tmp_path / "opening.v2.json"
+    shutil.copy(config.DEFAULT_CONFIG, cfg)
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), editor.make_handler(cfg, editor.RenderJob()))
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    base = f"http://127.0.0.1:{srv.server_port}"
+    try:
+        data = json.loads(req(base + "/api/config")[1])
+        assert req(base + "/api/config", "PUT", json.dumps(data).encode())[0] == 200
+        assert [p["name"] for p in json.loads(req(base + "/api/projects")[1])["projects"]] == ["opening.v2"]
+    finally:
+        srv.shutdown()
