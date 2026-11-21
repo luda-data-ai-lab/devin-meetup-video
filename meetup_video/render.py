@@ -123,7 +123,7 @@ class Renderer:
                 urllib.request.urlretrieve(scene.video_url, part)
                 os.replace(part, p)
             self._videos[scene.id] = VideoSource(p, scene.video_start, (self.W, self.H), self.cfg.fps)
-        fr = self._videos[scene.id].get(int(t * self.cfg.fps))
+        fr = self._videos[scene.id].get(int(round(t * self.cfg.fps)))
         if scene.blur_faces:
             if self._blur is None:
                 self._blur = FaceBlur(self.cfg.path(FACE_MODEL))
