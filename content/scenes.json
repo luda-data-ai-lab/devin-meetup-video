@@ -16,7 +16,7 @@
     "qr_label": "QR 찍고 퀴즈 참여! · Scan to join the quiz"
   },
   "music": {
-    "file": "assets/music/one_more_dance.mp3",
+    "file": "assets/music/a_game.mp3",
     "volume": 0.8,
     "fade_in": 0.5,
     "fade_out": 4.0,
