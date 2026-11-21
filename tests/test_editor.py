@@ -26,8 +26,8 @@ def server(tmp_path, monkeypatch):
     srv.shutdown()
 
 
-def req(url, method="GET", data=None):
-    r = urllib.request.Request(url, data=data, method=method)
+def req(url, method="GET", data=None, headers=None):
+    r = urllib.request.Request(url, data=data, method=method, headers=headers or {})
     try:
         with urllib.request.urlopen(r) as resp:
             return resp.status, resp.read()
@@ -77,3 +77,13 @@ def test_render_job_reports_progress(tmp_path):
             break
         time.sleep(0.1)
     assert job.state["error"] == "" and job.state["progress"] == 100
+
+
+def test_cross_origin_writes_rejected(server):
+    base, _, root = server
+    evil = {"Origin": "http://evil.example"}
+    assert req(base + "/api/upload/s1_namsan.png", "POST", b"x", evil)[0] == 403
+    assert req(base + "/api/config", "PUT", b"{}", evil)[0] == 403
+    assert req(base + "/api/render", "POST", b"", {"Host": "evil.example"})[0] == 403
+    assert not (root / "assets" / "scenes" / "s1_namsan.png").exists()
+    assert req(base + "/api/upload/s1_namsan.png", "POST", b"x", {"Origin": base})[0] == 200

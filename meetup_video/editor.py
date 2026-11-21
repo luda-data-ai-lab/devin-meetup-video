@@ -62,6 +62,13 @@ def make_handler(cfg_path, job):
             n = int(self.headers.get("Content-Length", 0))
             return self.rfile.read(n)
 
+        def local_request(self):
+            host = self.headers.get("Host", "")
+            if host.rsplit(":", 1)[0] not in ("127.0.0.1", "localhost"):
+                return False
+            origin = self.headers.get("Origin")
+            return origin is None or origin == f"http://{host}"
+
         def file(self, p, ctype):
             if not p.is_file():
                 return self.send(404, {"error": "not found"})
@@ -86,6 +93,8 @@ def make_handler(cfg_path, job):
             self.send(404, {"error": "not found"})
 
         def do_PUT(self):
+            if not self.local_request():
+                return self.send(403, {"error": "forbidden origin"})
             if self.path != "/api/config":
                 return self.send(404, {"error": "not found"})
             try:
@@ -100,6 +109,8 @@ def make_handler(cfg_path, job):
             self.send(200, {"ok": True})
 
         def do_POST(self):
+            if not self.local_request():
+                return self.send(403, {"error": "forbidden origin"})
             path, _, query = self.path.partition("?")
             if path == "/api/render":
                 preview = "preview=1" in query
