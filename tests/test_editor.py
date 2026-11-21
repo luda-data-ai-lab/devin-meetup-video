@@ -45,11 +45,11 @@ def test_page_and_manual_served(server):
 def test_save_valid_config_and_reject_invalid(server):
     base, cfg, _ = server
     data = json.loads(req(base + "/api/config")[1])
-    data["ending"]["qr_url"] = "https://quiz.example/q"
+    data["ending"]["welcome"] = "어서 오세요"
     data["scenes"][0]["caption_ko"] = "새 자막"
     assert req(base + "/api/config", "PUT", json.dumps(data).encode())[0] == 200
     saved = json.loads(cfg.read_text(encoding="utf-8"))
-    assert saved["ending"]["qr_url"] == "https://quiz.example/q" and saved["scenes"][0]["caption_ko"] == "새 자막"
+    assert saved["ending"]["welcome"] == "어서 오세요" and saved["scenes"][0]["caption_ko"] == "새 자막"
     data["scenes"][0]["duration"] = 0
     code, body = req(base + "/api/config", "PUT", json.dumps(data).encode())
     assert code == 400 and b"duration" in body
