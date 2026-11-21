@@ -51,3 +51,25 @@ def test_missing_korean_font_fails_loudly(monkeypatch):
             fonts.kr(20)
     finally:
         fonts.kr.cache_clear()
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg not installed")
+def test_video_scene_with_characters_and_face_blur(tmp_path):
+    clip = tmp_path / "clip.mp4"
+    subprocess.run(["ffmpeg", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=320x180:rate=5:duration=2",
+                    "-pix_fmt", "yuv420p", str(clip)], check=True)
+    cfg = config.parse({"video": {"width": 320, "height": 180, "fps": 5}, "scenes": [
+        {"id": "v", "type": "video", "duration": 2, "video": str(clip), "blur_faces": True,
+         "characters": [{"sprite": "devin", "x": [0.2, 0.8], "h": [0.5, 0.5]}]}]})
+    rd = Renderer(cfg, cache_dir=tmp_path)
+    a, b = rd.frame_at(0.0), rd.frame_at(1.8)
+    assert a.size == (320, 180) and a.tobytes() != b.tobytes()
+    assert rd.frame_at(0.2).size == (320, 180)
+    rd._videos["v"].close()
+
+
+def test_video_scene_requires_path_and_known_sprite():
+    with pytest.raises(config.ConfigError, match="video path"):
+        config.parse({"scenes": [{"id": "v", "type": "video", "duration": 1}]})
+    with pytest.raises(config.ConfigError, match="sprite"):
+        config.parse({"scenes": [{"id": "v", "duration": 1, "characters": [{"sprite": "cat"}]}]})

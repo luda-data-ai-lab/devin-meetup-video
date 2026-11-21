@@ -42,3 +42,10 @@ cd D:\01_luda\project\luda-data-ai-lab\devin-meetup-video; python -m meetup_vide
 
 ## 5. 이미지 자동 생성 (선택)
 `.env`의 `IMAGE_PROVIDER=mock`이 기본입니다. 실제 생성은 이후 단계에서 추가되며, 키는 `.env`의 `OPENAI_API_KEY`에만 넣습니다.
+
+## 6. 실사 장면 · 캐릭터 · 얼굴 흐림
+- 장면 `type`이 `video`이면 실제 영상(`video`)을 배경으로 씁니다. 파일이 없으면 `video_url`에서 `assets\footage\`로 자동으로 받습니다(이 폴더는 저장소에 올리지 않음).
+- `video_start`: 원본 영상에서 몇 초부터 쓸지.
+- `blur_faces: true`: 행인 얼굴을 자동으로 찾아 흐리게 합니다(opencv 필요, `pip install -r requirements.txt`).
+- `characters`: 영상 위에 걷는 캐릭터를 올립니다. `sprite`는 `devin`(수달) 또는 `bots`(Alpha·Oscar·Echo·Romeo·Delta), `x`=[시작, 끝] 가로 위치(0~1), `h`=[시작, 끝] 키(화면 높이 비율), `y`=발 위치(0~1), `walk`=false면 흔들림 없음.
+- 3D 장면 이미지는 `assets\scenes\<장면id>.jpg`이며, 편집 화면에서 바꿔 올릴 수 있습니다.

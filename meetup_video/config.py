@@ -6,6 +6,9 @@ ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = ROOT / "content" / "scenes.json"
 
 
+SPRITES = ("devin", "bots")
+
+
 class ConfigError(ValueError):
     pass
 
@@ -22,6 +25,11 @@ class Scene:
     terminal: list = field(default_factory=list)
     zoom: tuple = (1.0, 1.1)
     pan: float = 0.0
+    video: str = ""
+    video_url: str = ""
+    video_start: float = 0.0
+    blur_faces: bool = False
+    characters: list = field(default_factory=list)
 
 
 @dataclass
@@ -70,8 +78,13 @@ def parse(data, base_dir=ROOT):
         seen.add(raw["id"])
         if float(raw.get("duration", 0)) <= 0:
             raise ConfigError(f"scene {raw['id']}: duration must be > 0")
-        if raw.get("type", "image") not in ("image", "ending"):
-            raise ConfigError(f"scene {raw['id']}: type must be image or ending")
+        if raw.get("type", "image") not in ("image", "video", "ending"):
+            raise ConfigError(f"scene {raw['id']}: type must be image, video or ending")
+        if raw.get("type") == "video" and not raw.get("video"):
+            raise ConfigError(f"scene {raw['id']}: video scenes need a video path")
+        for c in raw.get("characters", []):
+            if c.get("sprite") not in SPRITES:
+                raise ConfigError(f"scene {raw['id']}: sprite must be one of {', '.join(SPRITES)}")
         s = Scene(**{k: v for k, v in raw.items() if k in Scene.__dataclass_fields__})
         s.duration = float(s.duration)
         try:

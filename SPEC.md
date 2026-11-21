@@ -32,3 +32,8 @@ Devin(공식 마스코트: 갓 쓴 주황 수달)과 팀 봇들이 서울 거리
 ## 실행 환경
 - Python 3.10+, Pillow, ffmpeg (PATH에 있어야 함)
 - 글꼴: Ubuntu Noto Sans CJK / Windows 맑은 고딕·Consolas 자동 선택
+
+## 확정 사항 (2026-11-21)
+- 화풍: C(실제 서울 거리 영상) + 3D 장면 혼합, 약 90초, 15장면 (콘티 v3, 첫 장면 샌프란시스코 → 인천 도착)
+- Bot: 실제 아바타 모양·색 (HQ·Alpha 자홍, HQ·Oscar 노랑, FDE·Echo 분홍보라, RE·Romeo 주황, FDE·Delta 주홍 단안형), 개발 풀 Bot은 행사장 장면에 등장
+- 실사: 우선 Mixkit 720p, 완료 후 Pexels 고화질로 교체

@@ -42,3 +42,10 @@ The ending uses the official white Cognition and Devin logos in `assets\brand\`.
 
 ## 5. Image generation (optional)
 `.env` defaults to `IMAGE_PROVIDER=mock`. Real generation comes in a later step; the key goes only in `.env` as `OPENAI_API_KEY`.
+
+## 6. Real footage, characters, face blur
+- A scene with `type: video` uses real footage (`video`) as background. If the file is missing it is downloaded from `video_url` into `assets\footage\` (not committed).
+- `video_start`: seconds into the source clip.
+- `blur_faces: true`: passerby faces are detected and blurred (needs opencv, `pip install -r requirements.txt`).
+- `characters`: walking characters over the footage. `sprite` is `devin` (otter) or `bots` (Alpha, Oscar, Echo, Romeo, Delta); `x`=[start, end] horizontal position (0-1), `h`=[start, end] height as a fraction of the screen, `y`=feet position (0-1), `walk: false` disables the bob.
+- 3D scene images live in `assets\scenes\<scene id>.jpg` and can be replaced from the editor.
