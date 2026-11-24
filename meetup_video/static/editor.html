@@ -41,6 +41,8 @@ button{background:#2dd4bf;color:#05211d;border:0;border-radius:8px;padding:8px 1
 button.alt{background:#2a3350;color:#e8ecf2}
 .thumb{max-width:220px;border-radius:6px;display:block;margin-top:6px}
 #msg{min-height:20px;color:#ffd666}
+#msg .missing-clips{background:#211b13;border:1px solid #806736;border-radius:8px;padding:12px 16px;margin-bottom:12px;overflow-wrap:anywhere}
+#msg .missing-clips p,#msg .missing-clips ul{margin:8px 0 0}
 video{width:100%;margin-top:10px;border-radius:8px}
 .globe-card{--globe-accent:#76f7ce;overflow:hidden}
 .globe-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-radius:8px;background:#0d2134;color:var(--globe-accent)}
@@ -271,6 +273,21 @@ function draw() {
   total();
 }
 function say(t) { $("#msg").textContent = t; }
+function showMissingClips(error, paths) {
+  const warning = document.createElement("div");
+  warning.className = "missing-clips";
+  warning.setAttribute("role", "alert");
+  const title = document.createElement("strong"); title.textContent = error;
+  const help = document.createElement("p");
+  help.textContent = "아래 경로에 파일을 넣거나 원본 영상 경로를 수정한 뒤 다시 렌더하세요. / Add the files at the paths below or update the source clip paths, then render again.";
+  const list = document.createElement("ul");
+  for (const path of paths) {
+    const item = document.createElement("li");
+    const code = document.createElement("code"); code.textContent = path;
+    item.append(code); list.append(item);
+  }
+  warning.append(title, help, list); $("#msg").replaceChildren(warning);
+}
 const q = (extra = "") => "?name=" + encodeURIComponent(cur) + extra;
 async function save(name = cur) {
   const r = await fetch("/api/config?name=" + encodeURIComponent(name), {method: "PUT", body: JSON.stringify(cfg)});
@@ -303,7 +320,11 @@ async function openProject(name) {
 async function render(preview) {
   if (!await save()) return;
   const r = await fetch("/api/render" + q(preview ? "&preview=1" : ""), {method: "POST"});
-  const j = await r.json(); if (!r.ok) return say(j.error);
+  const j = await r.json();
+  if (!r.ok) {
+    if (j.missing_clips) return showMissingClips(j.error, j.missing_clips);
+    return say(j.error);
+  }
   $("#status").hidden = false; poll();
 }
 async function poll() {
