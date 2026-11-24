@@ -78,8 +78,8 @@ def test_video_scene_requires_path_and_known_sprite():
 
 
 @pytest.mark.parametrize(("clip_id", "first_frame", "frame_count"), [
-    ("nikkie", 480, 600),
-    ("nader-dabit", 2492, 1806),
+    ("nikkie", 554, 600),
+    ("nader-dabit", 2565, 1806),
 ])
 def test_clip_frame_indices_are_consecutive_on_the_output_timeline(clip_id, first_frame, frame_count):
     cfg = config.load(config.ROOT / "content" / "ambassadors-nader.json")

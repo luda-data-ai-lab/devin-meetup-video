@@ -58,6 +58,33 @@ def test_globe_counts_and_featured_names_persist_through_editor(server):
     assert json.loads(req(goal)[1]) == data
 
 
+def test_city_details_persist_through_editor(server):
+    base, _, _ = server
+    project = globe_project(["Region\tCountry\tCity", "Asia-Pacific\tKorea\tSeoul"])
+    globe = project["scenes"][0]["globe"]
+    city = {"name": "서울", "country": "South Korea", "count": 1, "lat": 37.57, "lon": 126.98}
+    globe["regions"][0]["cities"] = [city]
+    url = base + "/api/config?name=ambassadors"
+    assert req(url, "PUT", json.dumps(project).encode())[0] == 200
+    assert json.loads(req(url)[1]) == project
+    city["lat"] = 91
+    assert req(url, "PUT", json.dumps(project).encode())[0] == 400
+
+
+def test_orbit_end_hold_is_editable_and_validated(server):
+    base, _, _ = server
+    project = globe_project(["Region\tCountry\tCity", "Asia-Pacific\tKorea\tSeoul"])
+    globe = project["scenes"][0]["globe"]
+    url = base + "/api/config?name=ambassadors"
+    for seconds in (0, 1.25):
+        globe["end_hold"] = seconds
+        assert req(url, "PUT", json.dumps(project).encode())[0] == 200
+        assert json.loads(req(url)[1])["scenes"][0]["globe"]["end_hold"] == seconds
+    for invalid in (-1, True, "3", float("inf")):
+        globe["end_hold"] = invalid
+        assert req(url, "PUT", json.dumps(project).encode())[0] == 400
+
+
 def test_nader_reel_is_discoverable_and_editable_as_a_separate_project(server):
     base, default, _ = server
     for name in ("ambassadors", "ambassadors-nader"):

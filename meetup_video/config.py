@@ -37,6 +37,10 @@ class Scene:
     subtitles_baked_in: bool = False
     subtitle_font_size: int = 49
 
+    @property
+    def timeline_duration(self):
+        return self.duration + (self.globe.get("end_hold", 0) if self.type == "globe" else 0)
+
 
 @dataclass
 class Config:
@@ -53,7 +57,7 @@ class Config:
 
     @property
     def total_duration(self):
-        return sum(s.duration for s in self.scenes)
+        return sum(s.timeline_duration for s in self.scenes)
 
     def path(self, rel):
         p = Path(rel)
@@ -80,6 +84,9 @@ def validate_globe(scene):
     regions = g.get("regions") if isinstance(g, dict) else None
     if not isinstance(regions, list) or not regions:
         raise ConfigError(f"scene {scene.id}: globe needs at least one region")
+    hold = g.get("end_hold", 0)
+    if type(hold) not in (int, float) or not 0 <= hold < math.inf or not math.isfinite(scene.timeline_duration):
+        raise ConfigError(f"scene {scene.id}: globe end_hold must be a finite nonnegative number")
     for region in regions:
         validate_globe_region(scene.id, region)
 
@@ -94,6 +101,24 @@ def validate_globe_region(scene_id, region):
         coord = region.get(key)
         if type(coord) not in (int, float) or not -limit <= coord <= limit:
             raise ConfigError(f"scene {scene_id}: globe region {key} must be between {-limit} and {limit}")
+    cities = region.get("cities", [])
+    if not isinstance(cities, list):
+        raise ConfigError(f"scene {scene_id}: globe cities must be a list")
+    for city in cities:
+        if not isinstance(city, dict):
+            raise ConfigError(f"scene {scene_id}: each city must be an object")
+        keys = ("name", "country", "roster_city") if "roster_city" in city else ("name", "country")
+        for key in keys:
+            value = city.get(key)
+            if (not isinstance(value, str) or not value.strip()
+                    or any(unicodedata.category(char) in ("Cc", "Zl", "Zp") for char in value)):
+                raise ConfigError(f"scene {scene_id}: city {key} must be nonblank single-line text")
+        if type(city.get("count")) is not int or city["count"] < 0:
+            raise ConfigError(f"scene {scene_id}: city count must be a nonnegative integer")
+        for key, limit in (("lat", 90), ("lon", 180)):
+            coord = city.get(key)
+            if type(coord) not in (int, float) or not -limit <= coord <= limit:
+                raise ConfigError(f"scene {scene_id}: city {key} must be between {-limit} and {limit}")
     for row in countries:
         if not isinstance(row, dict):
             raise ConfigError(f"scene {scene_id}: globe country must be an object")
