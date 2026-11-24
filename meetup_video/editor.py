@@ -198,6 +198,20 @@ def make_handler(cfg_path, job):
                     return self.send(400, {"error": str(e)})
                 if not src.is_file():
                     return self.send(404, {"error": "저장 후 렌더하세요 / save first"})
+                try:
+                    cfg = config.load(src)
+                    missing_clips = list(dict.fromkeys(
+                        scene.video for scene in cfg.scenes
+                        if (scene.type == "clip" or (scene.type == "video" and not scene.video_url))
+                        and not cfg.path(scene.video).is_file()
+                    ))
+                except (OSError, ValueError, TypeError, KeyError) as e:
+                    return self.send(400, {"error": str(e)})
+                if missing_clips:
+                    return self.send(400, {
+                        "error": "원본 영상 파일이 없습니다 / Missing source clips",
+                        "missing_clips": missing_clips,
+                    })
                 preview = "preview=1" in query
                 final, prev = outputs(name, default)
                 out = prev if preview else final

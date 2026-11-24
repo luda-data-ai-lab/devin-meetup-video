@@ -234,6 +234,45 @@ def test_named_projects_save_list_and_open(server):
         assert req(base + f"/api/config?name={bad}", "PUT", json.dumps(data).encode())[0] == 400
 
 
+@pytest.mark.parametrize("preview", [False, True])
+def test_render_preflight_lists_missing_clips_for_selected_project(server, monkeypatch, preview):
+    base, default, root = server
+    parse = config.parse
+    monkeypatch.setattr(config, "parse", lambda data: parse(data, base_dir=root))
+    for name in ("ambassadors", "ambassadors-nader"):
+        shutil.copy(config.DEFAULT_CONFIG.with_name(f"{name}.json"), default.parent)
+    calls = []
+    monkeypatch.setattr(editor.RenderJob, "start", lambda _, *args: calls.append(args) or True)
+    url = base + "/api/render?name=ambassadors" + ("&preview=1" if preview else "")
+    expected = [
+        "assets/footage/ambassador-nikkie.mp4",
+        "assets/footage/ambassador-colombia.mp4",
+        "assets/footage/ambassador-abu-dhabi.mp4",
+    ]
+
+    code, body = req(url, "POST", b"")
+    assert code == 400
+    assert json.loads(body) == {
+        "error": "원본 영상 파일이 없습니다 / Missing source clips",
+        "missing_clips": expected,
+    }
+    assert not calls
+
+    (root / "assets" / "footage").mkdir()
+    (root / expected[0]).touch()
+    code, body = req(url, "POST", b"")
+    assert code == 400
+    assert json.loads(body)["missing_clips"] == expected[1:]
+    assert not calls
+
+    for path in expected[1:]:
+        (root / path).touch()
+    assert req(url, "POST", b"")[0] == 202
+    assert calls == [(default.with_name("ambassadors.json"),
+                      "out/preview-ambassadors.mp4" if preview else "out/devin-meetup-seoul-ambassadors.mp4",
+                      preview)]
+
+
 def test_render_uses_project_name(tmp_path):
     cfg = tmp_path / "scenes.json"
     shutil.copy(config.DEFAULT_CONFIG, cfg)

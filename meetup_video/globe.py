@@ -80,10 +80,26 @@ def project_pin(lat, lon, view_lat, view_lon):
     lat, view_lat, delta = map(math.radians, (lat, view_lat, lon - view_lon))
     cos_lat, sin_lat = math.cos(lat), math.sin(lat)
     near = math.sin(view_lat) * sin_lat + math.cos(view_lat) * cos_lat * math.cos(delta)
-    if near >= 0:
+    if near >= -1e-12:
         return (cos_lat * math.sin(delta),
                 math.sin(view_lat) * cos_lat * math.cos(delta) - math.cos(view_lat) * sin_lat)
     return None
+
+
+def opening_views(regions):
+    coords = [(region["lat"], region["lon"]) for region in regions]
+    west = [i for i, (_, lon) in enumerate(coords) if lon < -24]
+    east = [i for i, (_, lon) in enumerate(coords) if lon >= -24]
+    views = [(20, -91, "AMERICAS", west), (20, 66, "EUROPE · AFRICA · ASIA", east)]
+    if all(project_pin(*coords[i], lat, lon) is not None
+           for lat, lon, _, indices in views for i in indices):
+        return views
+
+    east_lat, east_lon, _, _ = views[1]
+    opposite = (-east_lat, east_lon - 180)
+    west = [i for i, coord in enumerate(coords) if project_pin(*coord, *opposite) is not None]
+    east = [i for i in range(len(coords)) if i not in west]
+    return [(*opposite, "WORLD VIEW 01", west), (east_lat, east_lon, "WORLD VIEW 02", east)]
 
 
 def frame(scene, t, width, height):
@@ -152,12 +168,16 @@ def frame(scene, t, width, height):
             if pos is not None:
                 pins.append((index, cx + r * pos[0], cy + r * pos[1]))
         occupied = [(x - 11, y - 11, x + 11, y + 11) for _, x, y in pins]
-        for index, x, y in sorted(pins, key=lambda pin: pin[0] != i - 1):
-            active = index == i - 1
-            color = accent if active else fg
+        pins.sort(key=lambda pin: pin[0] != i - 1)
+
+        def place_badge(index, x, y, alternate):
             badge_w, badge_h = 33 + 18 * len(str(totals[index])), 40
-            options = [(31, -31), (-31 - badge_w, -31), (31, 31), (-31 - badge_w, 31),
-                       (-badge_w / 2, -55), (-badge_w / 2, 55)]
+            if alternate:
+                options = [(dx, dy) for dy in (-31 - badge_h, 31 + badge_h)
+                           for dx in (31, -31 - badge_w)]
+            else:
+                options = [(31, -31), (-31 - badge_w, -31), (31, 31), (-31 - badge_w, 31),
+                           (-badge_w / 2, -55), (-badge_w / 2, 55)]
             for dx, dy in options:
                 left, top = x + dx, y + dy - badge_h / 2
                 box = (left, top, left + badge_w, top + badge_h)
@@ -166,13 +186,27 @@ def frame(scene, t, width, height):
                 if overlaps(box, occupied):
                     continue
                 occupied.append(box)
+                return box
+            return None
+
+        badges = {index: place_badge(index, x, y, False) for index, x, y in pins}
+        if worldwide:
+            for index, x, y in pins:
+                if badges[index] is None:
+                    badges[index] = place_badge(index, x, y, True)
+
+        for index, x, y in pins:
+            active = index == i - 1
+            color = accent if active else fg
+            box = badges[index]
+            if box is not None:
+                left, top, right, bottom = box
                 end_x = min(max(x, left), box[2])
                 end_y = min(max(y, top), box[3])
                 d.line((*xy(x, y), *xy(end_x, end_y)), fill=color, width=max(1, round(2 * k)))
                 d.rounded_rectangle(rect(*box), radius=max(1, round(9 * k)), fill=bg, outline=color,
                                     width=max(1, round(2 * k)))
-                label(left + badge_w / 2, top + badge_h / 2, totals[index], 27, color, "mm", mono=True)
-                break
+                label((left + right) / 2, (top + bottom) / 2, totals[index], 27, color, "mm", mono=True)
             dot(x, y, active)
         return occupied
 
@@ -217,12 +251,9 @@ def frame(scene, t, width, height):
 
     cx, cy, radius = 1385, 512, 355
     if worldwide:
-        for x, view_lon, side, indices in (
-            (1125, -91, "AMERICAS", [j for j, region in enumerate(regions) if region["lon"] < -24]),
-            (1625, 66, "EUROPE · AFRICA · ASIA", [j for j, region in enumerate(regions) if region["lon"] >= -24]),
-        ):
-            globe(x, cy, 203, 20, view_lon, (12, 26))
-            region_pins(x, cy, 203, 20, view_lon, indices)
+        for x, (view_lat, view_lon, side, indices) in zip((1125, 1625), opening_views(regions)):
+            globe(x, cy, 203, view_lat, view_lon, (12, 26))
+            region_pins(x, cy, 203, view_lat, view_lon, indices)
             label(x, 790, side, 17, muted, "mm", mono=True)
     elif korea:
         radius += 78 * zoom
