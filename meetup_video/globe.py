@@ -68,6 +68,16 @@ def view_at(scene, t):
     return i, lat, lon
 
 
+def project_pin(lat, lon, view_lat, view_lon):
+    lat, view_lat, delta = map(math.radians, (lat, view_lat, lon - view_lon))
+    cos_lat, sin_lat = math.cos(lat), math.sin(lat)
+    near = math.sin(view_lat) * sin_lat + math.cos(view_lat) * cos_lat * math.cos(delta)
+    if near >= 0:
+        return (cos_lat * math.sin(delta),
+                math.sin(view_lat) * cos_lat * math.cos(delta) - math.cos(view_lat) * sin_lat)
+    return None
+
+
 def frame(scene, t, width, height):
     regions = scene.globe["regions"]
     totals = [sum(row["count"] for row in region["countries"]) for region in regions]
@@ -75,6 +85,11 @@ def frame(scene, t, width, height):
     worldwide = i == 0
     featured_names = korea_names(regions)
     korea = i > len(regions)
+    zoom = 0
+    if korea:
+        phase = t * (len(regions) + 2) / scene.duration - i
+        p = max(0, min(1, phase / 0.72))
+        zoom = p * p * (3 - 2 * p)
     if worldwide:
         name, count = "전 세계", sum(totals)
         rows = [(r["name"], n) for r, n in zip(regions, totals)]
@@ -98,15 +113,51 @@ def frame(scene, t, width, height):
                 px -= 1
         d.text(xy(x, y), str(value), font=font(px), fill=fill, anchor=anchor)
 
-    def globe(cx, cy, r):
-        for gap in (16, 43, 74):
+    def globe(cx, cy, r, view_lat, view_lon, gaps=(16, 43, 74)):
+        for gap in gaps:
             d.ellipse(rect(cx - r - gap, cy - r - gap, cx + r + gap, cy + r + gap),
                       outline=line, width=max(1, round(k)))
-        sphere = globe_image(max(2, round(2 * r * k)), lat, lon)
+        sphere = globe_image(max(2, round(2 * r * k)), view_lat, view_lon)
         image.alpha_composite(sphere, xy(cx - r, cy - r))
-        if not worldwide:
-            d.ellipse(rect(cx - 12, cy - 12, cx + 12, cy + 12), outline="#ffffff", width=max(1, round(2 * k)))
-            d.ellipse(rect(cx - 4, cy - 4, cx + 4, cy + 4), fill="#ffffff")
+
+    def dot(x, y, active):
+        color = accent if active else fg
+        radius = 15 if active else 9
+        d.ellipse(rect(x - radius, y - radius, x + radius, y + radius), fill=bg, outline=color,
+                  width=max(1, round((3 if active else 2) * k)))
+        d.ellipse(rect(x - 4, y - 4, x + 4, y + 4), fill=color)
+
+    def region_pins(cx, cy, r, view_lat, view_lon, region_indices):
+        pins = []
+        for index in region_indices:
+            region = regions[index]
+            pos = project_pin(region["lat"], region["lon"], view_lat, view_lon)
+            if pos is not None:
+                pins.append((index, cx + r * pos[0], cy + r * pos[1]))
+        occupied = [(x - 11, y - 11, x + 11, y + 11) for _, x, y in pins]
+        for index, x, y in sorted(pins, key=lambda pin: pin[0] != i - 1):
+            active = index == i - 1
+            color = accent if active else fg
+            badge_w, badge_h = 33 + 18 * len(str(totals[index])), 40
+            options = [(31, -31), (-31 - badge_w, -31), (31, 31), (-31 - badge_w, 31),
+                       (-badge_w / 2, -55), (-badge_w / 2, 55)]
+            for dx, dy in options:
+                left, top = x + dx, y + dy - badge_h / 2
+                box = (left, top, left + badge_w, top + badge_h)
+                if not (924 <= left and box[2] <= 1870 and 84 <= top and box[3] <= 934):
+                    continue
+                if any(left < right and box[2] > bx and top < bottom and box[3] > by
+                       for bx, by, right, bottom in occupied):
+                    continue
+                occupied.append(box)
+                end_x = min(max(x, left), box[2])
+                end_y = min(max(y, top), box[3])
+                d.line((*xy(x, y), *xy(end_x, end_y)), fill=color, width=max(1, round(2 * k)))
+                d.rounded_rectangle(rect(*box), radius=max(1, round(9 * k)), fill=bg, outline=color,
+                                    width=max(1, round(2 * k)))
+                label(left + badge_w / 2, top + badge_h / 2, totals[index], 27, color, "mm", mono=True)
+                break
+            dot(x, y, active)
 
     def roster(x, y, columns, col_width, row_height):
         per_col = math.ceil(len(rows) / columns)
@@ -116,14 +167,33 @@ def frame(scene, t, width, height):
             label(xx, yy, country, 26, max_width=col_width - 106)
             label(xx + col_width - 24, yy, number, 26, accent, "rm", mono=True, max_width=72)
 
-    globe(1385, 512, 355)
+    cx, cy, radius = 1385, 512, 355
+    if worldwide:
+        for x, view_lon, side, indices in (
+            (1125, -91, "AMERICAS", [j for j, region in enumerate(regions) if region["lon"] < -24]),
+            (1625, 66, "EUROPE · AFRICA · ASIA", [j for j, region in enumerate(regions) if region["lon"] >= -24]),
+        ):
+            globe(x, cy, 203, 20, view_lon, (12, 26))
+            region_pins(x, cy, 203, 20, view_lon, indices)
+            label(x, 790, side, 17, muted, "mm", mono=True)
+    elif korea:
+        radius += 78 * zoom
+        cy -= 29 * zoom
+        globe(cx, cy, radius, lat, lon, (13, 28, 45))
+        pos = project_pin(37.57, 126.98, lat, lon)
+        if pos is not None:
+            dot(cx + radius * pos[0], cy + radius * pos[1], True)
+    else:
+        globe(cx, cy, radius, lat, lon)
+        region_pins(cx, cy, radius, lat, lon, range(len(regions)))
     label(100, 88, "DEVIN MEETUP SEOUL  /  AMBASSADOR NETWORK", 25, accent, mono=True)
     if korea:
         label(100, 209, "대한민국", 71, max_width=800)
         label(100, 305, "서울  /  SEOUL, SOUTH KOREA", 27, accent)
-        spacing = min(96, 536 / len(featured_names))
+        spacing = min(93 + 32 * zoom, 500 / len(featured_names))
+        size = 54 + 35 * zoom
         for j, featured_name in enumerate(featured_names):
-            label(100, 428 + j * spacing, featured_name, min(59, spacing * 0.75), max_width=800)
+            label(100, 428 + j * spacing, featured_name, min(size, spacing * 0.85), max_width=800)
     else:
         label(100, 209, name, 71, max_width=800)
         label(100, 346, count, 149, accent, mono=True, max_width=440)
