@@ -3,7 +3,7 @@ import subprocess
 from array import array
 
 import pytest
-from PIL import ImageChops, ImageDraw
+from PIL import Image, ImageChops, ImageDraw
 
 from meetup_video import config
 from meetup_video.render import Renderer, subtitle_card
@@ -75,6 +75,31 @@ def test_video_scene_requires_path_and_known_sprite():
         config.parse({"scenes": [{"id": "v", "type": "video", "duration": 1}]})
     with pytest.raises(config.ConfigError, match="sprite"):
         config.parse({"scenes": [{"id": "v", "duration": 1, "characters": [{"sprite": "cat"}]}]})
+
+
+@pytest.mark.parametrize(("clip_id", "first_frame", "frame_count"), [
+    ("nikkie", 480, 600),
+    ("nader-dabit", 2492, 1806),
+])
+def test_clip_frame_indices_are_consecutive_on_the_output_timeline(clip_id, first_frame, frame_count):
+    cfg = config.load(config.ROOT / "content" / "ambassadors-nader.json")
+    cfg.width, cfg.height = 16, 9
+    renderer = Renderer(cfg)
+    indices = []
+    image = Image.new("RGB", (cfg.width, cfg.height))
+
+    class FrameSource:
+        def get(self, index):
+            indices.append(index)
+            return image
+
+    renderer._videos[clip_id] = FrameSource()
+    for scene in cfg.scenes:
+        if scene.id == clip_id:
+            scene.subtitles = []
+    for frame in range(first_frame, first_frame + frame_count):
+        renderer.frame_at(frame / cfg.fps)
+    assert indices == list(range(frame_count))
 
 
 @pytest.mark.skipif(not shutil.which("ffmpeg") or not shutil.which("ffprobe"), reason="ffmpeg/ffprobe not installed")
