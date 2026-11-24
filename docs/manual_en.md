@@ -5,7 +5,7 @@
 winget install Gyan.FFmpeg; winget install Python.Python.3.12
 cd D:\01_luda\project\luda-data-ai-lab\devin-meetup-video; pip install -r requirements.txt; copy .env.example .env
 ```
-Open a new PowerShell; if `ffmpeg -version` prints a version you are ready.
+Open a new PowerShell and check that both `ffmpeg -version` and `ffprobe -version` print a version.
 
 ## 2. Make the video
 | Goal | Command |
@@ -56,18 +56,18 @@ The ending uses the official white Cognition and Devin logos in `assets\brand\`.
 - 3D scene images live in `assets\scenes\<scene id>.jpg` and can be replaced from the editor.
 
 ## 7. Ambassador globe and greeting reel
-1. Put the three supplied source videos under `assets/footage/`. Rename copies as shown below, or set **Source clip** to each local path in the editor. Source videos are not stored in Git.
+1. Create `assets/footage/` in the extracted or cloned project folder and put the three supplied source videos there. Rename copies as shown below, or set **Source clip** to each local path in the editor. Neither a GitHub source ZIP nor a clone includes these videos. The basic **ambassadors** project does not require the Nader clip.
 
    | Original file | Default local filename |
    |---|---|
    | `Congrats-Seoul-Devin-Meetup-nikkie.mp4` | `ambassador-nikkie.mp4` |
    | `South-Korea-Greeting-ES-subbed.mp4` | `ambassador-colombia.mp4` |
-   | WhatsApp video dated 2026-11-16 at 4:24:34 AM | `ambassador-abu-dhabi.mp4` |
+   | `WhatsApp Video 2026-11-16 at 4.24.34 AM.mp4` | `ambassador-abu-dhabi.mp4` |
 
 2. Open the **ambassadors** saved project. Expand a region in **Orbit** to edit country counts. The region and worldwide totals update immediately; **Save** persists them. The intro opens on the worldwide total and shows pins with active ambassador counts for all six regions across two globe views. During the tour, the current region's pin is highlighted, and the intro ends by zooming in on Seoul and enlarging South Korea's featured names. In **Asia-Pacific**, enter one name per line under **South Korea ambassador names** (the country's `featured_names` in the project JSON). Clearing the list removes the Seoul stop without changing the counts. Use **Duration** to adjust the pace (16 seconds by default).
 3. Use **Move up** / **Move down** on a clip to change the greeting order without moving the intro. Expand **Korean subtitle cues** on Abu Dhabi to revise text, add or remove cues, or edit their start/end times in seconds relative to the start of that clip. Cues must be in order, not overlap, and fit within its duration. Nikkie and Colombia keep the Korean subtitles that are already in their video images; those subtitles cannot be edited separately.
    Set **Subtitle font size** in the same section (pixels at 1080p; Abu Dhabi is set to 36).
-4. Choose **Preview** or **Final** in the editor, or render from the command line:
+4. Choose **Preview** or **Final** in the editor. If any required clips are missing, the editor lists all expected paths before starting the render. Add the files or update the source clip paths, then try again. To render from the command line:
 
    ```powershell
    python -m meetup_video render --config content/ambassadors.json --out out/ambassador-reel.mp4
