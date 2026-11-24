@@ -1,5 +1,6 @@
 import json
 import math
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -102,8 +103,14 @@ def validate_globe_region(scene_id, region):
         if type(count) is not int or count < 0:
             raise ConfigError(f"scene {scene_id}: globe count must be a nonnegative integer")
         names = row.get("featured_names", [])
-        if not isinstance(names, list) or any(not isinstance(name, str) or not name.strip() for name in names):
-            raise ConfigError(f"scene {scene_id}: globe featured_names must be a list of nonblank names")
+        if not isinstance(names, list) or any(
+            not isinstance(name, str) or not name.strip()
+            or any(unicodedata.category(char) in ("Cc", "Zl", "Zp") for char in name)
+            for name in names
+        ):
+            raise ConfigError(f"scene {scene_id}: globe featured_names must be nonblank single-line names without control characters")
+        if "featured_names" in row:
+            row["featured_names"] = [name.strip() for name in names]
 
 
 def validate_clip(scene):

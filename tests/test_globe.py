@@ -32,7 +32,7 @@ def test_globe_rejects_invalid_count(bad):
         config.parse(data)
 
 
-@pytest.mark.parametrize("bad", ["James Yeon", [None], [" "]])
+@pytest.mark.parametrize("bad", ["James Yeon", [None], [" "], ["James\nYeon"], ["James\x00Yeon"], ["James\u2028Yeon"]])
 def test_globe_rejects_invalid_featured_names(bad):
     data = globe_project(ROSTER)
     data["scenes"][0]["globe"]["regions"][-1]["countries"][0]["featured_names"] = bad

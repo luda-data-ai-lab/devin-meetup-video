@@ -51,8 +51,10 @@ def test_globe_counts_and_featured_names_persist_through_editor(server):
     assert req(goal, "PUT", json.dumps(project).encode())[0] == 200
     data = json.loads(req(goal)[1])
     data["scenes"][0]["globe"]["regions"][0]["countries"][0]["count"] = 7
-    data["scenes"][0]["globe"]["regions"][0]["countries"][0]["featured_names"] = ["James Yeon"]
+    row = data["scenes"][0]["globe"]["regions"][0]["countries"][0]
+    row["featured_names"] = ["  James Yeon  "]
     assert req(goal, "PUT", json.dumps(data).encode())[0] == 200
+    row["featured_names"] = ["James Yeon"]
     assert json.loads(req(goal)[1]) == data
 
 
