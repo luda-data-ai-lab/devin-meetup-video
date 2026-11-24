@@ -115,6 +115,23 @@ def test_orbit_region_pins_and_seoul_name_zoom(monkeypatch):
     assert all(sizes[0][name] < sizes[1][name] for name in names)
 
 
+def test_opening_pins_include_region_moved_to_auckland(monkeypatch):
+    scene = config.load(config.ROOT / "content" / "ambassadors.json").scenes[0]
+    scene.globe["regions"][-1].update(lat=-36.85, lon=174.76)
+    config.validate_globe(scene)
+    pin_counts = []
+    draw_text = ImageDraw.ImageDraw.text
+
+    def capture(draw, xy, text, *args, anchor=None, **kwargs):
+        if anchor == "mm" and text.isdecimal():
+            pin_counts.append(text)
+        return draw_text(draw, xy, text, *args, anchor=anchor, **kwargs)
+
+    monkeypatch.setattr(ImageDraw.ImageDraw, "text", capture)
+    frame(scene, 0, 480, 270)
+    assert sorted(pin_counts) == ["10", "22", "39", "4", "46", "71"]
+
+
 def test_globe_motion_and_frame_size():
     video = {"width": 320, "height": 180}
     renderer = Renderer(config.parse({**globe_project(ROSTER), "video": video}))
