@@ -157,6 +157,9 @@ def frame(scene, t, width, height):
             badge_w, badge_h = 33 + 18 * len(str(totals[index])), 40
             options = [(31, -31), (-31 - badge_w, -31), (31, 31), (-31 - badge_w, 31),
                        (-badge_w / 2, -55), (-badge_w / 2, 55)]
+            if worldwide:
+                options.extend((dx, dy) for dy in (-31 - badge_h, 31 + badge_h)
+                               for dx in (31, -31 - badge_w))
             for dx, dy in options:
                 left, top = x + dx, y + dy - badge_h / 2
                 box = (left, top, left + badge_w, top + badge_h)

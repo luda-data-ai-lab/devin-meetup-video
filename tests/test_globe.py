@@ -132,6 +132,28 @@ def test_opening_pins_include_region_moved_to_auckland(monkeypatch):
     assert sorted(pin_counts) == ["10", "22", "39", "4", "46", "71"]
 
 
+def test_opening_fallback_keeps_badges_for_fiji_and_samoa(monkeypatch):
+    scene = config.load(config.ROOT / "content" / "ambassadors.json").scenes[0]
+    scene.globe["regions"] = [
+        {"name": "Fiji", "lat": -17.7134, "lon": 178.065,
+         "countries": [{"country": "Fiji", "count": 12}]},
+        {"name": "Samoa", "lat": -13.759, "lon": -172.1046,
+         "countries": [{"country": "Samoa", "count": 13}]},
+    ]
+    config.validate_globe(scene)
+    pin_counts = []
+    draw_text = ImageDraw.ImageDraw.text
+
+    def capture(draw, xy, text, *args, anchor=None, **kwargs):
+        if anchor == "mm" and text.isdecimal():
+            pin_counts.append(text)
+        return draw_text(draw, xy, text, *args, anchor=anchor, **kwargs)
+
+    monkeypatch.setattr(ImageDraw.ImageDraw, "text", capture)
+    frame(scene, 0, 480, 270)
+    assert sorted(pin_counts) == ["12", "13"]
+
+
 def test_globe_motion_and_frame_size():
     video = {"width": 320, "height": 180}
     renderer = Renderer(config.parse({**globe_project(ROSTER), "video": video}))
