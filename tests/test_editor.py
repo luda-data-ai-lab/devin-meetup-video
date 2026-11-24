@@ -88,6 +88,27 @@ def test_nader_reel_is_discoverable_and_editable_as_a_separate_project(server):
     assert json.loads(req(original_url)[1]) == original
 
 
+def test_nader_welcome_is_a_single_editable_clip_with_the_same_subtitles(server):
+    base, default, _ = server
+    for name in ("nader-welcome", "ambassadors-nader"):
+        shutil.copy(config.DEFAULT_CONFIG.with_name(f"{name}.json"), default.parent)
+    listed = json.loads(req(base + "/api/projects")[1])
+    assert "nader-welcome" in {project["name"] for project in listed["projects"]}
+
+    url = base + "/api/config?name=nader-welcome"
+    standalone = json.loads(req(url)[1])
+    reel_url = base + "/api/config?name=ambassadors-nader"
+    reel = json.loads(req(reel_url)[1])
+    assert standalone["scenes"] == [reel["scenes"][-1]]
+    clip = standalone["scenes"][0]
+    assert (clip["id"], clip["type"], len(clip["subtitles"])) == ("nader-dabit", "clip", 17)
+
+    clip["subtitles"][0]["text"] = "안녕하세요, 여러분!"
+    assert req(url, "PUT", json.dumps(standalone).encode())[0] == 200
+    assert json.loads(req(url)[1]) == standalone
+    assert json.loads(req(reel_url)[1]) == reel
+
+
 def test_save_valid_config_and_reject_invalid(server):
     base, cfg, _ = server
     data = json.loads(req(base + "/api/config")[1])
