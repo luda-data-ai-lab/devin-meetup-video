@@ -54,3 +54,24 @@ The ending uses the official white Cognition and Devin logos in `assets\brand\`.
 - `blur_faces: true`: passerby faces are detected and blurred (needs opencv, `pip install -r requirements.txt`).
 - `characters`: walking characters over the footage. `sprite` is `devin` (otter) or `bots` (Alpha, Oscar, Echo, Romeo, Delta); `x`=[start, end] horizontal position (0-1), `h`=[start, end] height as a fraction of the screen, `y`=feet position (0-1), `walk: false` disables the bob.
 - 3D scene images live in `assets\scenes\<scene id>.jpg` and can be replaced from the editor.
+
+## 7. Ambassador globe and greeting reel
+1. Put the three supplied source videos under `assets/footage/`. Rename copies as shown below, or set **Source clip** to each local path in the editor. Source videos are not stored in Git.
+
+   | Original file | Default local filename |
+   |---|---|
+   | `Congrats-Seoul-Devin-Meetup-nikkie.mp4` | `ambassador-nikkie.mp4` |
+   | `South-Korea-Greeting-ES-subbed.mp4` | `ambassador-colombia.mp4` |
+   | WhatsApp video dated 2026-11-16 at 4:24:34 AM | `ambassador-abu-dhabi.mp4` |
+
+2. Open the **ambassadors** saved project. Expand a region in **Orbit** to edit country counts. The region and worldwide totals update immediately; **Save** persists them. The intro visits each region, shows its country breakdown, and finishes on the worldwide total.
+3. Use **Move up** / **Move down** on a clip to change the greeting order without moving the intro. Expand **Korean subtitle cues** on Abu Dhabi to revise text, add or remove cues, or edit their start/end times in seconds relative to the start of that clip. Cues must be in order, not overlap, and fit within its duration. Nikkie and Colombia keep the Korean subtitles that are already in their video images; those subtitles cannot be edited separately.
+4. Choose **Preview** or **Final** in the editor, or render from the command line:
+
+   ```powershell
+   python -m meetup_video render --config content/ambassadors.json --out out/ambassador-reel.mp4
+   ```
+
+   The final reel is 1920×1080 at 30 fps with 48 kHz stereo AAC. Portrait clips keep their framing with side bars; spoken audio is loudness-normalized and new Korean cues are burned into the picture.
+
+For direct editing, `content/ambassadors.json` uses the order of the `scenes` array. A `clip` scene has a local `video` path, optional `video_start` in source seconds, and `duration`. Its `subtitles` are `{"start": 1.36, "end": 2.5, "text": "안녕하세요"}` objects; set `subtitles_baked_in: true` and omit cues for footage that already has Korean text. To aggregate a new `Region / Country / City` TSV, run `python -m meetup_video.roster path/to/roster.tsv` and copy the generated `globe.regions` into the intro scene without replacing the clips.

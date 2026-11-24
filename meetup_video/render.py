@@ -4,11 +4,12 @@ import os
 import shutil
 import subprocess
 import urllib.request
+from functools import lru_cache
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from . import fonts
+from . import fonts, globe
 from .providers import get_provider
 
 TYPE_CPS = 22
@@ -25,18 +26,22 @@ FACE_MODEL = "assets/models/yunet.onnx"
 
 
 class VideoSource:
-    """Sequential ffmpeg reader that returns cover-fit RGB frames; seeks by restarting."""
+    """Sequential ffmpeg reader that returns fitted RGB frames; seeks by restarting."""
 
-    def __init__(self, path, start, size, fps):
+    def __init__(self, path, start, size, fps, contain=False):
         self.path, self.start, self.size, self.fps = str(path), start, size, fps
+        self.contain = contain
         self.proc, self.next, self.frame = None, 0, None
 
     def _open(self, idx):
         self.close()
         w, h = self.size
-        vf = f"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},fps={self.fps}"
+        if self.contain:
+            vf = f"scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps={self.fps}"
+        else:
+            vf = f"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},fps={self.fps}"
         self.proc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-ss", str(self.start + idx / self.fps), "-i", self.path,
-                                      "-vf", vf, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE,
+                                      "-filter_threads", "2", "-vf", vf, "-threads", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE,
                                      stderr=subprocess.DEVNULL)
         self.next = idx
 
@@ -59,6 +64,41 @@ class VideoSource:
             self.proc.kill()
             self.proc.wait()
             self.proc = None
+
+
+@lru_cache(maxsize=40)
+def subtitle_card(text, width, height):
+    k = min(width / 1920, height / 1080)
+    size = max(1, round(49 * k))
+    pad = max(1, round(16 * k))
+    font = fonts.kr(size)
+    limit = width * 0.84 - 2 * pad
+    lines = []
+    for paragraph in text.splitlines():
+        line = ""
+        for word in paragraph.split():
+            candidate = f"{line} {word}" if line else word
+            if line and font.getlength(candidate) > limit:
+                lines.append(line)
+                line = word
+            else:
+                line = candidate
+        lines.append(line)
+    text = "\n".join(lines)
+    while size > 1:
+        font = fonts.kr(size)
+        if max(font.getlength(line) for line in lines) <= limit and (size + pad) * len(lines) < height * 0.7:
+            break
+        size -= 1
+    spacing = max(1, size // 5)
+    left, top, right, bottom = ImageDraw.Draw(Image.new("RGBA", (1, 1))).multiline_textbbox(
+        (0, 0), text, font=font, spacing=spacing, align="center")
+    left, top = math.floor(left), math.floor(top)
+    card = Image.new("RGBA", (math.ceil(right) - left + 2 * pad, math.ceil(bottom) - top + 2 * pad))
+    d = ImageDraw.Draw(card)
+    d.rounded_rectangle((0, 0, card.width - 1, card.height - 1), radius=pad // 2, fill=(8, 12, 20, 232))
+    d.multiline_text((pad - left, pad - top), text, font=font, fill="white", spacing=spacing, align="center")
+    return card
 
 
 class FaceBlur:
@@ -140,6 +180,23 @@ class Renderer:
             cx = min(max(cx, w / 2), self.W - w / 2)
             fr = fr.crop((int(cx - w / 2), int((self.H - h) / 2), int(cx + w / 2), int((self.H + h) / 2))).resize((self.W, self.H), Image.BILINEAR)
         return fr.convert("RGBA")
+
+    def clip_path(self, scene):
+        path = self.cfg.path(scene.video)
+        if not path.is_file():
+            raise FileNotFoundError(f"scene {scene.id}: missing clip {scene.video}")
+        return path
+
+    def clip_frame(self, scene, t):
+        if scene.id not in self._videos:
+            self._videos[scene.id] = VideoSource(self.clip_path(scene), scene.video_start,
+                                                (self.W, self.H), self.cfg.fps, contain=True)
+        frame = self._videos[scene.id].get(int(round(t * self.cfg.fps))).convert("RGBA")
+        cue = next((c for c in scene.subtitles if c["start"] <= t < c["end"]), None)
+        if cue:
+            card = subtitle_card(cue["text"], self.W, self.H)
+            frame.alpha_composite(card, ((self.W - card.width) // 2, max(0, round(self.H * 0.93) - card.height)))
+        return frame
 
     def sprite(self, name):
         if name not in self._sprites:
@@ -296,6 +353,10 @@ class Renderer:
 
     def scene_frame(self, i, t):
         scene = self.cfg.scenes[i]
+        if scene.type == "globe":
+            return globe.frame(scene, t, self.W, self.H)
+        if scene.type == "clip":
+            return self.clip_frame(scene, t)
         if scene.type == "ending":
             if scene.image:
                 bg = self.camera(scene, 0.5)
@@ -321,14 +382,15 @@ class Renderer:
         i, t = self.locate(gt)
         fr = self.scene_frame(i, t)
         tr = self.cfg.transition_sec
-        if i > 0 and t < tr and self.cfg.scenes[i].type != "ending":
+        if (i > 0 and t < tr and self.cfg.scenes[i].type not in ("ending", "clip")
+                and self.cfg.scenes[i - 1].type != "clip"):
             fr = Image.blend(self.last_frame(i - 1), fr, t / tr)
         return fr.convert("RGB")
 
-    def music_args(self):
+    def music_input(self):
         m = self.cfg.music
         if not m["file"]:
-            return []
+            return None
         path = self.cfg.path(m["file"])
         if not path.is_file():
             raise RuntimeError(f"music file not found: {m['file']}")
@@ -339,8 +401,52 @@ class Renderer:
             af += f",afade=t=in:st=0:d={m['fade_in']}"
         if fo > 0:
             af += f",afade=t=out:st={total - fo}:d={fo}"
-        return ["-ss", str(m["start"]), "-i", str(path), "-map", "0:v", "-map", "1:a",
-                "-af", af + ",apad", "-c:a", "aac", "-b:a", "192k", "-t", str(total)]
+        return ["-ss", str(m["start"]), "-i", str(path)], af + ",apad"
+
+    def music_args(self):
+        music = self.music_input()
+        if music is None:
+            return []
+        source, audio_filter = music
+        return [*source, "-map", "0:v", "-map", "1:a", "-af", audio_filter,
+                "-c:a", "aac", "-b:a", "192k", "-t", str(self.cfg.total_duration)]
+
+    def clip_audio_args(self):
+        if not shutil.which("ffprobe"):
+            raise RuntimeError("ffprobe not found on PATH")
+        inputs, filters, labels = [], [], []
+        index = 1
+        silence = "anullsrc=channel_layout=stereo:sample_rate=48000"
+        for i, scene in enumerate(self.cfg.scenes):
+            label = f"audio{i}"
+            labels.append(f"[{label}]")
+            duration = scene.duration
+            stream = False
+            if scene.type == "clip":
+                path = self.clip_path(scene)
+                info = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a:0",
+                                       "-show_entries", "stream=index", "-of", "csv=p=0", str(path)],
+                                      capture_output=True, text=True, check=True)
+                stream = bool(info.stdout.strip())
+            if stream:
+                inputs.extend(["-i", str(path)])
+                filters.append(f"[{index}:a:0]atrim=start={scene.video_start}:duration={duration},asetpts=PTS-STARTPTS,"
+                               f"aformat=channel_layouts=stereo,loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000,"
+                               f"apad,atrim=duration={duration}[{label}]")
+                index += 1
+            else:
+                filters.append(f"{silence},atrim=duration={duration}[{label}]")
+        filters.append("".join(labels) + f"concat=n={len(labels)}:v=0:a=1[voices]")
+        result = "[voices]"
+        music = self.music_input()
+        if music:
+            source, audio_filter = music
+            inputs.extend(source)
+            filters.append(f"[{index}:a:0]{audio_filter},aresample=48000,aformat=channel_layouts=stereo[music]")
+            filters.append("[voices][music]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95:level=false[mix]")
+            result = "[mix]"
+        return [*inputs, "-filter_complex_threads", "2", "-filter_complex", ";".join(filters),
+                "-map", "0:v", "-map", result, "-c:a", "aac", "-ar", "48000", "-ac", "2", "-b:a", "192k"]
 
     def render(self, out, progress=None):
         if not shutil.which("ffmpeg"):
@@ -348,8 +454,9 @@ class Renderer:
         out = Path(out)
         out.parent.mkdir(parents=True, exist_ok=True)
         n = int(round(self.cfg.total_duration * self.cfg.fps))
+        audio = self.clip_audio_args() if any(s.type == "clip" for s in self.cfg.scenes) else self.music_args()
         cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{self.W}x{self.H}",
-               "-r", str(self.cfg.fps), "-i", "-", *self.music_args(), "-c:v", "libx264", "-pix_fmt", "yuv420p",
+               "-r", str(self.cfg.fps), "-i", "-", *audio, "-c:v", "libx264", "-pix_fmt", "yuv420p",
                "-crf", "20", "-movflags", "+faststart", str(out)]
         ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
         try:

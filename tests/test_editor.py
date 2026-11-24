@@ -10,6 +10,7 @@ from http.server import ThreadingHTTPServer
 import pytest
 
 from meetup_video import config, editor
+from meetup_video.roster import globe_project
 
 
 @pytest.fixture
@@ -41,6 +42,17 @@ def test_page_and_manual_served(server):
     code, body = req(base + "/")
     assert code == 200 and "영상 편집".encode() in body and b"/manual/en" in body
     assert req(base + "/manual/ko") == (200, "# 매뉴얼".encode())
+
+
+def test_globe_counts_persist_through_editor(server):
+    base, _, _ = server
+    project = globe_project(["Region\tCountry\tCity", "Asia-Pacific\tKorea\tSeoul"])
+    goal = base + "/api/config?name=ambassadors"
+    assert req(goal, "PUT", json.dumps(project).encode())[0] == 200
+    data = json.loads(req(goal)[1])
+    data["scenes"][0]["globe"]["regions"][0]["countries"][0]["count"] = 7
+    assert req(goal, "PUT", json.dumps(data).encode())[0] == 200
+    assert json.loads(req(goal)[1]) == data
 
 
 def test_save_valid_config_and_reject_invalid(server):

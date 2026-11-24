@@ -1,0 +1,271 @@
+{
+  "video": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30
+  },
+  "scenes": [
+    {
+      "id": "ambassador-globe",
+      "type": "globe",
+      "duration": 28,
+      "globe": {
+        "regions": [
+          {
+            "name": "North America",
+            "lat": 36,
+            "lon": -103,
+            "countries": [
+              {
+                "country": "United States",
+                "count": 56
+              },
+              {
+                "country": "Canada",
+                "count": 15
+              }
+            ]
+          },
+          {
+            "name": "Latin America",
+            "lat": -13,
+            "lon": -62,
+            "countries": [
+              {
+                "country": "Brazil",
+                "count": 7
+              },
+              {
+                "country": "Mexico",
+                "count": 7
+              },
+              {
+                "country": "Argentina",
+                "count": 3
+              },
+              {
+                "country": "Chile",
+                "count": 2
+              },
+              {
+                "country": "Colombia",
+                "count": 2
+              },
+              {
+                "country": "El Salvador",
+                "count": 1
+              }
+            ]
+          },
+          {
+            "name": "Europe",
+            "lat": 49,
+            "lon": 13,
+            "countries": [
+              {
+                "country": "United Kingdom",
+                "count": 7
+              },
+              {
+                "country": "Germany",
+                "count": 6
+              },
+              {
+                "country": "Italy",
+                "count": 6
+              },
+              {
+                "country": "Turkey",
+                "count": 5
+              },
+              {
+                "country": "Poland",
+                "count": 3
+              },
+              {
+                "country": "Netherlands",
+                "count": 2
+              },
+              {
+                "country": "Spain",
+                "count": 2
+              },
+              {
+                "country": "Austria",
+                "count": 1
+              },
+              {
+                "country": "Czech Republic",
+                "count": 1
+              },
+              {
+                "country": "Hungary",
+                "count": 1
+              },
+              {
+                "country": "Latvia",
+                "count": 1
+              },
+              {
+                "country": "Portugal",
+                "count": 1
+              },
+              {
+                "country": "Romania",
+                "count": 1
+              },
+              {
+                "country": "Serbia",
+                "count": 1
+              },
+              {
+                "country": "Switzerland",
+                "count": 1
+              }
+            ]
+          },
+          {
+            "name": "Africa",
+            "lat": 0,
+            "lon": 21,
+            "countries": [
+              {
+                "country": "Egypt",
+                "count": 1
+              },
+              {
+                "country": "South Africa",
+                "count": 1
+              },
+              {
+                "country": "Tunisia",
+                "count": 1
+              },
+              {
+                "country": "Uganda",
+                "count": 1
+              }
+            ]
+          },
+          {
+            "name": "Middle East",
+            "lat": 25,
+            "lon": 48,
+            "countries": [
+              {
+                "country": "United Arab Emirates",
+                "count": 5
+              },
+              {
+                "country": "Israel",
+                "count": 3
+              },
+              {
+                "country": "Jordan",
+                "count": 1
+              },
+              {
+                "country": "Saudi Arabia",
+                "count": 1
+              }
+            ]
+          },
+          {
+            "name": "Asia-Pacific",
+            "lat": 26,
+            "lon": 115,
+            "countries": [
+              {
+                "country": "India",
+                "count": 13
+              },
+              {
+                "country": "Japan",
+                "count": 9
+              },
+              {
+                "country": "China",
+                "count": 4
+              },
+              {
+                "country": "Australia",
+                "count": 3
+              },
+              {
+                "country": "Singapore",
+                "count": 3
+              },
+              {
+                "country": "South Korea",
+                "count": 3
+              },
+              {
+                "country": "Bangladesh",
+                "count": 2
+              },
+              {
+                "country": "New Zealand",
+                "count": 2
+              },
+              {
+                "country": "Pakistan",
+                "count": 2
+              },
+              {
+                "country": "Philippines",
+                "count": 1
+              },
+              {
+                "country": "Sri Lanka",
+                "count": 1
+              },
+              {
+                "country": "Taiwan",
+                "count": 1
+              },
+              {
+                "country": "Thailand",
+                "count": 1
+              },
+              {
+                "country": "Vietnam",
+                "count": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "nikkie",
+      "type": "clip",
+      "video": "assets/footage/ambassador-nikkie.mp4",
+      "duration": 20,
+      "subtitles_baked_in": true
+    },
+    {
+      "id": "colombia",
+      "type": "clip",
+      "video": "assets/footage/ambassador-colombia.mp4",
+      "duration": 7.95,
+      "subtitles_baked_in": true
+    },
+    {
+      "id": "abu-dhabi",
+      "type": "clip",
+      "video": "assets/footage/ambassador-abu-dhabi.mp4",
+      "duration": 39.1,
+      "subtitles": [
+        {"start": 1.36, "end": 2.5, "text": "평화가 함께하시길 바랍니다."},
+        {"start": 2.66, "end": 7.54, "text": "안녕하세요, 여러분. 저는 함자 알카마르입니다.\n아랍에미리트 아부다비에서 Devin 앰버서더로 활동하고 있어요."},
+        {"start": 7.62, "end": 11.4, "text": "재미있는 얘기 하나 하자면, 지금도 Devin이 열심히 일하고 있어요."},
+        {"start": 11.64, "end": 15.12, "text": "제 업무에 쓸 맞춤형 대시보드를 만들고 있거든요."},
+        {"start": 15.52, "end": 19.85, "text": "보시다시피 Devin은 이미 제 일하는 방식의 일부가 됐습니다."},
+        {"start": 20.1, "end": 21.98, "text": "여러분도 그렇게 활용해 보시면 좋겠어요."},
+        {"start": 22.22, "end": 24.96, "text": "다시 한번 Devin 커뮤니티에 오신 걸 환영합니다."},
+        {"start": 24.96, "end": 31.8, "text": "소프트웨어 엔지니어링의 새로운 흐름에\n함께해 주셔서 감사합니다."},
+        {"start": 31.92, "end": 38.7, "text": "그리고 Devin 앰버서더로 누구보다 활발히 활동해 주시는\n제임스에게도 감사드립니다."}
+      ]
+    }
+  ]
+}

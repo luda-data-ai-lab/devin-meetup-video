@@ -54,3 +54,24 @@ cd D:\01_luda\project\luda-data-ai-lab\devin-meetup-video; python -m meetup_vide
 - `blur_faces: true`: 행인 얼굴을 자동으로 찾아 흐리게 합니다(opencv 필요, `pip install -r requirements.txt`).
 - `characters`: 영상 위에 걷는 캐릭터를 올립니다. `sprite`는 `devin`(수달) 또는 `bots`(Alpha·Oscar·Echo·Romeo·Delta), `x`=[시작, 끝] 가로 위치(0~1), `h`=[시작, 끝] 키(화면 높이 비율), `y`=발 위치(0~1), `walk`=false면 흔들림 없음.
 - 3D 장면 이미지는 `assets\scenes\<장면id>.jpg`이며, 편집 화면에서 바꿔 올릴 수 있습니다.
+
+## 7. 앰버서더 지구본 인트로와 인사 영상
+1. 받은 원본 영상 세 개를 `assets/footage/`에 넣습니다. 복사본의 파일명을 아래처럼 바꾸거나 편집 화면의 **원본 영상 경로**에 각 파일의 로컬 경로를 입력하세요. 원본 영상은 Git에 올라가지 않습니다.
+
+   | 원본 파일 | 기본 로컬 파일명 |
+   |---|---|
+   | `Congrats-Seoul-Devin-Meetup-nikkie.mp4` | `ambassador-nikkie.mp4` |
+   | `South-Korea-Greeting-ES-subbed.mp4` | `ambassador-colombia.mp4` |
+   | 2026-11-16 오전 4:24:34 WhatsApp 영상 | `ambassador-abu-dhabi.mp4` |
+
+2. 저장 목록에서 **ambassadors**를 엽니다. **Orbit** 인트로에서 지역을 펼쳐 국가별 인원을 고칩니다. 지역별·전 세계 합계는 즉시 갱신되며, **저장**을 누르면 변경 사항이 반영됩니다. 인트로는 지역을 차례로 돌며 국가별 인원을 보여 준 뒤 전 세계 합계로 마무리됩니다.
+3. 영상 카드의 **위로** / **아래로**를 눌러 인사 영상 순서를 바꿉니다. 인트로는 맨 앞에 남습니다. 아부다비 영상 카드에서 **한글 자막**을 펼치면 문구를 수정하거나 자막을 추가·삭제하고, 영상 시작 지점 기준으로 시작·끝 시간(초)을 고칠 수 있습니다. 자막 시간은 순서대로 입력하고 서로 겹치거나 영상 길이를 넘지 않도록 합니다. nikkie와 콜롬비아 영상은 원본 화면에 이미 들어 있는 한국어 자막을 그대로 사용하므로 별도로 수정할 수 없습니다.
+4. 편집 화면에서 **미리보기 렌더** 또는 **최종 렌더**를 누르거나, 아래 명령을 실행합니다.
+
+   ```powershell
+   python -m meetup_video render --config content/ambassadors.json --out out/ambassador-reel.mp4
+   ```
+
+   최종 출력은 1920×1080, 초당 30프레임, 48 kHz 스테레오 AAC입니다. 세로 영상은 좌우 여백을 넣어 잘리지 않으며, 인사 영상의 음량은 일정한 기준으로 맞추고 새 한국어 자막은 화면에 직접 넣습니다.
+
+`content/ambassadors.json`을 직접 고칠 때는 `scenes` 배열의 순서가 재생 순서입니다. `clip` 장면에는 로컬 영상 경로 `video`, 필요시 원본 시작 시간 `video_start`(초), 재생 길이 `duration`을 설정합니다. `subtitles`에는 `{"start": 1.36, "end": 2.5, "text": "안녕하세요"}` 형식으로 자막을 넣습니다. 원본에 한국어 자막이 들어 있으면 `subtitles_baked_in: true`로 설정하고 별도 자막은 넣지 않습니다. 새 `Region / Country / City` TSV가 있으면 `python -m meetup_video.roster path/to/roster.tsv`를 실행한 뒤, 결과의 `globe.regions` 부분만 인트로 장면에 붙여 넣으면 기존 영상 설정을 그대로 유지할 수 있습니다.

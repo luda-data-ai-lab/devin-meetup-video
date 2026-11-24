@@ -42,6 +42,29 @@ button.alt{background:#2a3350;color:#e8ecf2}
 .thumb{max-width:220px;border-radius:6px;display:block;margin-top:6px}
 #msg{min-height:20px;color:#ffd666}
 video{width:100%;margin-top:10px;border-radius:8px}
+.globe-card{--globe-accent:#76f7ce;overflow:hidden}
+.globe-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-radius:8px;background:#0d2134;color:var(--globe-accent)}
+.globe-banner h3{margin:4px 0 0}
+.globe-banner small{font-size:11px;font-weight:700;letter-spacing:.08em}
+.globe-total{white-space:nowrap;font-size:24px}
+.globe-help{margin:12px 0;color:#a9b8cc;font-size:13px}
+.globe-settings{max-width:180px;margin-bottom:14px}
+.globe-region{background:#111727;border:1px solid #2a3350;border-radius:8px;margin-top:6px}
+.globe-region summary{cursor:pointer;padding:10px 12px;color:#e8ecf2;font-weight:700}
+.globe-region summary span{float:right;color:var(--globe-accent)}
+.globe-countries{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px 24px;padding:4px 12px 10px}
+.globe-countries label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0;font-weight:500}
+.globe-countries input{width:78px;flex:none;color:var(--globe-accent);text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:420px){.globe-banner{padding:12px}.globe-banner h3{font-size:15px}.globe-total{font-size:20px}.globe-countries{grid-template-columns:1fr}}
+.clip-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.clip-head h3{margin:0}
+.clip-head button + button{margin-left:6px}
+.clip-head button:disabled{opacity:.45;cursor:default}
+.clip-cues{margin-top:12px}
+.clip-cues summary{cursor:pointer;color:#e8ecf2;font-weight:700}
+.clip-cue{border-top:1px solid #2a3350;padding:10px 0;display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+.clip-cue:first-of-type{margin-top:10px}
+.clip-cue textarea{min-height:64px}
 </style></head><body>
 <header><h1>Devin Meetup Seoul · 영상 편집 <small>(Video editor)</small></h1>
 <span id="total"></span>
@@ -53,6 +76,8 @@ video{width:100%;margin-top:10px;border-radius:8px}
 <main>
 <div id="msg"></div>
 <div class="card" id="status" hidden><b>렌더 Render</b> <span id="prog"></span><video id="vid" controls hidden></video></div>
+<div id="globe-scenes"></div>
+<div id="clip-scenes"></div>
 <div class="card"><h3>엔딩 · Ending</h3><div class="grid" id="ending"></div></div>
 <div class="card"><h3>배경음악 · Music</h3><div class="grid four" id="music"></div></div>
 <div class="card"><h3>영상 · Video</h3><div class="grid" id="video"></div></div>
@@ -67,7 +92,7 @@ const ENDING = [["title","제목 Title"],["date","날짜 Date"],["welcome","환�
 function field(obj, key, label, type="text") {
   const w = document.createElement("div");
   w.innerHTML = `<label>${label}</label>`;
-  const el = document.createElement(type === "lines" ? "textarea" : "input");
+  const el = document.createElement(type === "lines" || type === "multiline" ? "textarea" : "input");
   if (type === "number") { el.type = "number"; el.step = "0.1"; }
   if (type === "check") { el.type = "checkbox"; el.style.width = "auto"; el.checked = !!obj[key];
     el.onchange = () => { obj[key] = el.checked; dirty = true; }; w.appendChild(el); return w; }
@@ -80,7 +105,104 @@ function field(obj, key, label, type="text") {
   w.appendChild(el); return w;
 }
 function total() { $("#total").textContent = "총 " + cfg.scenes.reduce((a, s) => a + Number(s.duration || 0), 0) + "초"; }
+function globeEditor(scene, index) {
+  const g = scene.globe;
+  const card = document.createElement("section");
+  card.className = "card globe-card"; card.dataset.scene = scene.id;
+  card.innerHTML = `<div class="globe-banner"><div><small>AMBASSADOR NETWORK · SCENE ${index + 1}</small><h3>앰버서더 인트로 · Orbit</h3></div><div class="globe-total"></div></div>
+    <p class="globe-help">국가별 인원을 수정하면 지역과 전 세계 합계가 자동으로 갱신됩니다.</p>
+    <div class="globe-settings"></div>`;
+  card.querySelector(".globe-settings").append(field(scene, "duration", "시간(초) Duration", "number"));
+  const totals = [];
+  function updateCounts() {
+    let worldwide = 0;
+    g.regions.forEach((region, i) => {
+      const n = region.countries.reduce((sum, row) => sum + (row.count ?? 0), 0);
+      totals[i].textContent = n + "명";
+      worldwide += n;
+    });
+    card.querySelector(".globe-total").textContent = worldwide + "명";
+  }
+  g.regions.forEach((region, i) => {
+    const details = document.createElement("details"); details.className = "globe-region"; details.open = i === 0;
+    const summary = document.createElement("summary"); summary.textContent = region.name;
+    const count = document.createElement("span"); totals.push(count); summary.append(count);
+    const countries = document.createElement("div"); countries.className = "globe-countries";
+    region.countries.forEach(row => {
+      const label = document.createElement("label"); label.textContent = row.country;
+      const input = document.createElement("input"); input.type = "number"; input.min = 0; input.step = 1;
+      input.value = row.count;
+      input.oninput = () => { row.count = Number.isNaN(input.valueAsNumber) ? null : input.valueAsNumber; updateCounts(); dirty = true; };
+      label.append(input); countries.append(label);
+    });
+    details.append(summary, countries); card.append(details);
+  });
+  updateCounts();
+  return card;
+}
+function clipEditor(scene, index, clipIndices) {
+  const card = document.createElement("section");
+  card.className = "card"; card.dataset.scene = scene.id;
+  const title = document.createElement("h3"); title.textContent = `${index + 1}. ${scene.id}`;
+  const head = document.createElement("div"); head.className = "clip-head"; head.append(title);
+  const actions = document.createElement("div"); head.append(actions);
+  const position = clipIndices.indexOf(index);
+  for (const [direction, name] of [[-1, "↑ 위로 Move up"], [1, "↓ 아래로 Move down"]]) {
+    const other = clipIndices[position + direction];
+    const button = document.createElement("button"); button.className = "alt"; button.textContent = name;
+    button.disabled = other === undefined;
+    button.onclick = () => {
+      [cfg.scenes[index], cfg.scenes[other]] = [cfg.scenes[other], cfg.scenes[index]];
+      dirty = true; draw();
+    };
+    actions.append(button);
+  }
+  const fields = document.createElement("div"); fields.className = "grid";
+  fields.append(field(scene, "video", "원본 영상 경로 Source clip"), field(scene, "video_start", "원본 시작(초) Source start", "number"),
+    field(scene, "duration", "재생 시간(초) Duration", "number"));
+  fields.querySelectorAll('input[type="number"]').forEach(input => { input.step = "0.001"; input.min = 0; });
+  card.append(head, fields);
+  if (scene.subtitles_baked_in) {
+    const note = document.createElement("p"); note.className = "globe-help";
+    note.textContent = "원본에 포함된 한글 자막을 그대로 사용합니다. · Uses the original burned-in Korean subtitles.";
+    card.append(note);
+    return card;
+  }
+  const cues = scene.subtitles ??= [];
+  const section = document.createElement("details"); section.className = "clip-cues";
+  const summary = document.createElement("summary"); summary.textContent = "한글 자막 · Korean subtitle cues";
+  const rows = document.createElement("div");
+  const add = document.createElement("button"); add.className = "alt"; add.textContent = "+ 자막 추가 Add cue";
+  function drawCues() {
+    rows.replaceChildren(...cues.map((cue, i) => {
+      const row = document.createElement("div"); row.className = "clip-cue";
+      const start = field(cue, "start", "시작(초) Start", "number");
+      const end = field(cue, "end", "끝(초) End", "number");
+      for (const box of [start, end]) {
+        const input = box.querySelector("input"); input.step = "0.01"; input.min = 0;
+        input.setAttribute("aria-label", box.textContent + " " + (i + 1));
+      }
+      const text = field(cue, "text", "한글 자막 Korean subtitle", "multiline"); text.className = "wide";
+      text.querySelector("textarea").setAttribute("aria-label", "Korean subtitle " + (i + 1));
+      const remove = document.createElement("button"); remove.textContent = "삭제 Remove"; remove.className = "alt";
+      remove.onclick = () => { cues.splice(i, 1); dirty = true; drawCues(); };
+      row.append(start, end, remove, text);
+      return row;
+    }));
+  }
+  add.onclick = () => {
+    const start = cues.at(-1)?.end ?? 0;
+    if (start >= scene.duration) return say("마지막 자막의 끝 시간을 앞당겨 주세요. · End the last cue earlier.");
+    cues.push({start, end: Math.min(start + 2, scene.duration), text: ""}); dirty = true; drawCues();
+    rows.lastElementChild.querySelector("textarea").focus();
+  };
+  drawCues(); section.append(summary, rows, add); card.append(section);
+  return card;
+}
 function draw() {
+  $("#globe-scenes").replaceChildren(...cfg.scenes.flatMap((s, i) => s.type === "globe" ? [globeEditor(s, i)] : []));
+  const clipIndices = cfg.scenes.flatMap((s, i) => s.type === "clip" ? [i] : []);
+  $("#clip-scenes").replaceChildren(...clipIndices.map(i => clipEditor(cfg.scenes[i], i, clipIndices)));
   $("#ending").replaceChildren(...ENDING.map(([k, l, ty]) => field(cfg.ending, k, l, ty)));
   const mf = field(cfg.music, "file", "음악 파일 Music file (비우면 음악 없음 / empty = no music)");
   const mu = document.createElement("input"); mu.type = "file"; mu.accept = "audio/mpeg,audio/mp4,audio/wav,.mp3,.m4a,.wav";
@@ -99,7 +221,8 @@ function draw() {
   mf.appendChild(row);
   $("#music").replaceChildren(mf, ...MUSIC.map(([k, l, ty]) => field(cfg.music, k, l, ty)));
   $("#video").replaceChildren(field(cfg.video, "accent", "강조색 Accent (#RRGGBB)"), field(cfg.video, "transition_sec", "전환(초) Transition", "number"));
-  $("#scenes").replaceChildren(...cfg.scenes.map((s, i) => {
+  $("#scenes").replaceChildren(...cfg.scenes.flatMap((s, i) => {
+    if (s.type === "globe" || s.type === "clip") return [];
     const c = document.createElement("div"); c.className = "card"; c.dataset.scene = s.id;
     c.innerHTML = `<h3>${i + 1}. ${s.id}${s.type === "ending" ? " (엔딩)" : ""}</h3>`;
     const g = document.createElement("div"); g.className = "grid scene";
@@ -125,7 +248,7 @@ function draw() {
     };
     im.appendChild(up);
     if (s.image) { const t = document.createElement("img"); t.className = "thumb"; t.src = "/files/" + s.image + "?" + Date.now(); t.onerror = () => t.remove(); im.appendChild(t); }
-    g.append(im); c.append(g); return c;
+    g.append(im); c.append(g); return [c];
   }));
   total();
 }
