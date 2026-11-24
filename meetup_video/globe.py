@@ -151,15 +151,16 @@ def frame(scene, t, width, height):
             if pos is not None:
                 pins.append((index, cx + r * pos[0], cy + r * pos[1]))
         occupied = [(x - 11, y - 11, x + 11, y + 11) for _, x, y in pins]
-        for index, x, y in sorted(pins, key=lambda pin: pin[0] != i - 1):
-            active = index == i - 1
-            color = accent if active else fg
+        pins.sort(key=lambda pin: pin[0] != i - 1)
+
+        def place_badge(index, x, y, alternate):
             badge_w, badge_h = 33 + 18 * len(str(totals[index])), 40
-            options = [(31, -31), (-31 - badge_w, -31), (31, 31), (-31 - badge_w, 31),
-                       (-badge_w / 2, -55), (-badge_w / 2, 55)]
-            if worldwide:
-                options.extend((dx, dy) for dy in (-31 - badge_h, 31 + badge_h)
-                               for dx in (31, -31 - badge_w))
+            if alternate:
+                options = [(dx, dy) for dy in (-31 - badge_h, 31 + badge_h)
+                           for dx in (31, -31 - badge_w)]
+            else:
+                options = [(31, -31), (-31 - badge_w, -31), (31, 31), (-31 - badge_w, 31),
+                           (-badge_w / 2, -55), (-badge_w / 2, 55)]
             for dx, dy in options:
                 left, top = x + dx, y + dy - badge_h / 2
                 box = (left, top, left + badge_w, top + badge_h)
@@ -169,13 +170,27 @@ def frame(scene, t, width, height):
                        for bx, by, right, bottom in occupied):
                     continue
                 occupied.append(box)
+                return box
+            return None
+
+        badges = {index: place_badge(index, x, y, False) for index, x, y in pins}
+        if worldwide:
+            for index, x, y in pins:
+                if badges[index] is None:
+                    badges[index] = place_badge(index, x, y, True)
+
+        for index, x, y in pins:
+            active = index == i - 1
+            color = accent if active else fg
+            box = badges[index]
+            if box is not None:
+                left, top, right, bottom = box
                 end_x = min(max(x, left), box[2])
                 end_y = min(max(y, top), box[3])
                 d.line((*xy(x, y), *xy(end_x, end_y)), fill=color, width=max(1, round(2 * k)))
                 d.rounded_rectangle(rect(*box), radius=max(1, round(9 * k)), fill=bg, outline=color,
                                     width=max(1, round(2 * k)))
-                label(left + badge_w / 2, top + badge_h / 2, totals[index], 27, color, "mm", mono=True)
-                break
+                label((left + right) / 2, (top + bottom) / 2, totals[index], 27, color, "mm", mono=True)
             dot(x, y, active)
 
     def roster(x, y, columns, col_width, row_height):

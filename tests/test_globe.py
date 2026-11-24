@@ -154,6 +154,31 @@ def test_opening_fallback_keeps_badges_for_fiji_and_samoa(monkeypatch):
     assert sorted(pin_counts) == ["12", "13"]
 
 
+def test_opening_alternate_badges_preserve_standard_positions(monkeypatch):
+    scene = config.load(config.ROOT / "content" / "ambassadors.json").scenes[0]
+    scene.globe["regions"] = [
+        {"name": name, "lat": lat, "lon": lon, "countries": [{"country": name, "count": count}]}
+        for name, lat, lon, count in [
+            ("Saipan", 15.185, 145.75, 101),
+            ("Guam", 13.4443, 144.7937, 102),
+            ("Manila", 14.5995, 120.9842, 103),
+            ("Palau", 7.515, 134.5825, 104),
+        ]
+    ]
+    config.validate_globe(scene)
+    pin_counts = set()
+    draw_text = ImageDraw.ImageDraw.text
+
+    def capture(draw, xy, text, *args, anchor=None, **kwargs):
+        if anchor == "mm" and text.isdecimal():
+            pin_counts.add(text)
+        return draw_text(draw, xy, text, *args, anchor=anchor, **kwargs)
+
+    monkeypatch.setattr(ImageDraw.ImageDraw, "text", capture)
+    frame(scene, 0, 480, 270)
+    assert {"101", "103", "104"} <= pin_counts
+
+
 def test_globe_motion_and_frame_size():
     video = {"width": 320, "height": 180}
     renderer = Renderer(config.parse({**globe_project(ROSTER), "video": video}))
