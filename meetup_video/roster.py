@@ -53,7 +53,7 @@ def globe_project(lines):
             regions.append({"name": name, "lat": lat, "lon": lon, "countries": countries})
     if not regions:
         raise ValueError("Roster has no ambassador rows")
-    return {"scenes": [{"id": "ambassador-globe", "type": "globe", "duration": 4 * (len(regions) + 1),
+    return {"scenes": [{"id": "ambassador-globe", "type": "globe", "duration": 2 * (len(regions) + 1),
                         "globe": {"regions": regions}}]}
 
 

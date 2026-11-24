@@ -64,7 +64,7 @@ The ending uses the official white Cognition and Devin logos in `assets\brand\`.
    | `South-Korea-Greeting-ES-subbed.mp4` | `ambassador-colombia.mp4` |
    | WhatsApp video dated 2026-11-16 at 4:24:34 AM | `ambassador-abu-dhabi.mp4` |
 
-2. Open the **ambassadors** saved project. Expand a region in **Orbit** to edit country counts. The region and worldwide totals update immediately; **Save** persists them. The intro visits each region, shows its country breakdown, and finishes on the worldwide total.
+2. Open the **ambassadors** saved project. Expand a region in **Orbit** to edit country counts. The region and worldwide totals update immediately; **Save** persists them. The intro opens on the worldwide total, then visits each region and shows its country breakdown. Use **Duration** to adjust the pace (14 seconds by default).
 3. Use **Move up** / **Move down** on a clip to change the greeting order without moving the intro. Expand **Korean subtitle cues** on Abu Dhabi to revise text, add or remove cues, or edit their start/end times in seconds relative to the start of that clip. Cues must be in order, not overlap, and fit within its duration. Nikkie and Colombia keep the Korean subtitles that are already in their video images; those subtitles cannot be edited separately.
 4. Choose **Preview** or **Final** in the editor, or render from the command line:
 

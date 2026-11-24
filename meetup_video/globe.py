@@ -49,7 +49,7 @@ def view_at(scene, t):
     regions = scene.globe["regions"]
     i, phase = divmod(max(0, t) * (len(regions) + 1) / scene.duration, 1)
     i = min(int(i), len(regions))
-    stops = [*regions, {"lat": 37.57, "lon": 126.98}]
+    stops = [{"lat": 18, "lon": -28}, *regions]
     stop, prev = stops[i], stops[max(i - 1, 0)]
     f = min(1, phase / 0.34)
     f = f * f * (3 - 2 * f)
@@ -65,11 +65,14 @@ def frame(scene, t, width, height):
     regions = scene.globe["regions"]
     totals = [sum(row["count"] for row in region["countries"]) for region in regions]
     i, lat, lon = view_at(scene, t)
-    worldwide = i == len(regions)
-    name = "전 세계" if worldwide else regions[i]["name"]
-    count = sum(totals) if worldwide else totals[i]
-    rows = ([(r["name"], n) for r, n in zip(regions, totals)] if worldwide else
-            [(row["country"], row["count"]) for row in regions[i]["countries"]])
+    worldwide = i == 0
+    if worldwide:
+        name, count = "전 세계", sum(totals)
+        rows = [(r["name"], n) for r, n in zip(regions, totals)]
+    else:
+        region = regions[i - 1]
+        name, count = region["name"], totals[i - 1]
+        rows = [(row["country"], row["count"]) for row in region["countries"]]
     k = min(width / 1920, height / 1080)
     x0, y0 = (width - 1920 * k) / 2, (height - 1080 * k) / 2
     xy = lambda x, y: (round(x0 + x * k), round(y0 + y * k))
@@ -92,8 +95,9 @@ def frame(scene, t, width, height):
                       outline=line, width=max(1, round(k)))
         sphere = globe_image(max(2, round(2 * r * k)), lat, lon)
         image.alpha_composite(sphere, xy(cx - r, cy - r))
-        d.ellipse(rect(cx - 12, cy - 12, cx + 12, cy + 12), outline="#ffffff", width=max(1, round(2 * k)))
-        d.ellipse(rect(cx - 4, cy - 4, cx + 4, cy + 4), fill="#ffffff")
+        if not worldwide:
+            d.ellipse(rect(cx - 12, cy - 12, cx + 12, cy + 12), outline="#ffffff", width=max(1, round(2 * k)))
+            d.ellipse(rect(cx - 4, cy - 4, cx + 4, cy + 4), fill="#ffffff")
 
     def roster(x, y, columns, col_width, row_height):
         per_col = math.ceil(len(rows) / columns)
@@ -109,8 +113,9 @@ def frame(scene, t, width, height):
     label(100, 346, count, 149, accent, mono=True, max_width=440)
     label(100, 445, "활동 중인 앰버서더  /  ACTIVE AMBASSADORS", 27, muted)
     roster(100, 525, 2, 408, min(53, 420 / math.ceil(len(rows) / 2)))
-    label(1820, 940, f"{abs(lat):05.1f}° {'N' if lat >= 0 else 'S'}  /  {abs(lon):05.1f}° {'E' if lon >= 0 else 'W'}",
-          22, muted, "rm", mono=True)
+    if not worldwide:
+        label(1820, 940, f"{abs(lat):05.1f}° {'N' if lat >= 0 else 'S'}  /  {abs(lon):05.1f}° {'E' if lon >= 0 else 'W'}",
+              22, muted, "rm", mono=True)
 
     d.line((*xy(100, 1004), *xy(1820, 1004)), fill=line, width=max(1, round(k)))
     label(100, 1040, f"{len(regions):02d} REGIONS  /  {sum(len(r['countries']) for r in regions):02d} COUNTRIES", 21, muted, mono=True)

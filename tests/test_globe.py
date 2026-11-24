@@ -33,6 +33,7 @@ def test_globe_rejects_invalid_count(bad):
 
 def test_roster_project_matches_supplied_regional_totals():
     scene = config.load(config.ROOT / "content" / "ambassadors.json").scenes[0]
+    assert scene.duration == 14
     regions = scene.globe["regions"]
     assert [sum(c["count"] for c in r["countries"]) for r in regions] == [71, 22, 39, 4, 10, 46]
     assert sum(len(r["countries"]) for r in regions) == 45
@@ -42,8 +43,11 @@ def test_globe_motion_and_frame_size():
     video = {"width": 320, "height": 180}
     renderer = Renderer(config.parse({**globe_project(ROSTER), "video": video}))
     scene = renderer.cfg.scenes[0]
-    assert view_at(scene, 4) == (1, 36, -103)
-    assert view_at(scene, 5.5) == (1, 26, 115)
-    start, final = (renderer.frame_at(t) for t in (0, 11))
+    assert scene.duration == 6
+    assert view_at(scene, 0) == (0, 18, -28)
+    assert view_at(scene, 2) == (1, 18, -28)
+    assert view_at(scene, 2.7) == (1, 36, -103)
+    assert view_at(scene, 5.5) == (2, 26, 115)
+    start, final = (renderer.frame_at(t) for t in (0, 5.5))
     assert start.size == final.size == (320, 180)
     assert start.tobytes() != final.tobytes()
