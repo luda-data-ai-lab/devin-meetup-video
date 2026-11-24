@@ -44,13 +44,14 @@ def test_page_and_manual_served(server):
     assert req(base + "/manual/ko") == (200, "# 매뉴얼".encode())
 
 
-def test_globe_counts_persist_through_editor(server):
+def test_globe_counts_and_featured_names_persist_through_editor(server):
     base, _, _ = server
     project = globe_project(["Region\tCountry\tCity", "Asia-Pacific\tKorea\tSeoul"])
     goal = base + "/api/config?name=ambassadors"
     assert req(goal, "PUT", json.dumps(project).encode())[0] == 200
     data = json.loads(req(goal)[1])
     data["scenes"][0]["globe"]["regions"][0]["countries"][0]["count"] = 7
+    data["scenes"][0]["globe"]["regions"][0]["countries"][0]["featured_names"] = ["James Yeon"]
     assert req(goal, "PUT", json.dumps(data).encode())[0] == 200
     assert json.loads(req(goal)[1]) == data
 

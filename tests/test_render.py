@@ -3,6 +3,7 @@ import subprocess
 from array import array
 
 import pytest
+from PIL import ImageChops
 
 from meetup_video import config
 from meetup_video.render import Renderer
@@ -101,6 +102,14 @@ def test_joined_clip_keeps_portrait_audio_and_burns_subtitles(tmp_path):
     assert before.getpixel((0, 90)) == (0, 0, 0)
     assert before.getpixel((160, 90))[0] > 240
     assert before.tobytes() == after.tobytes() != captioned.tobytes()
+    data["scenes"][1]["subtitle_font_size"] = 36
+    renderer.cfg.scenes[1].subtitle_font_size = config.parse(data).scenes[1].subtitle_font_size
+    smaller = renderer.frame_at(1.3)
+    normal_box = ImageChops.difference(before, captioned).getbbox()
+    smaller_box = ImageChops.difference(before, smaller).getbbox()
+    assert smaller_box is not None
+    assert smaller_box[2] - smaller_box[0] < normal_box[2] - normal_box[0]
+    assert smaller_box[3] - smaller_box[1] < normal_box[3] - normal_box[1]
     renderer._videos["clip"].close()
 
 
@@ -111,6 +120,8 @@ def test_clip_rejects_double_subtitles_and_invalid_timing():
         config.parse({"scenes": [{**clip, "subtitles_baked_in": True}]})
     with pytest.raises(config.ConfigError, match="subtitle times"):
         config.parse({"scenes": [{**clip, "subtitles": [{"start": 0, "end": 1.1, "text": "안녕하세요"}]}]})
+    with pytest.raises(config.ConfigError, match="subtitle font size"):
+        config.parse({"scenes": [{**clip, "subtitle_font_size": 0}]})
 
 
 def test_ending_qr_toggle(tmp_path):

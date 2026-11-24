@@ -67,9 +67,9 @@ class VideoSource:
 
 
 @lru_cache(maxsize=40)
-def subtitle_card(text, width, height):
+def subtitle_card(text, width, height, font_size):
     k = min(width / 1920, height / 1080)
-    size = max(1, round(49 * k))
+    size = max(1, round(font_size * k))
     pad = max(1, round(16 * k))
     font = fonts.kr(size)
     limit = width * 0.84 - 2 * pad
@@ -194,7 +194,7 @@ class Renderer:
         frame = self._videos[scene.id].get(int(round(t * self.cfg.fps))).convert("RGBA")
         cue = next((c for c in scene.subtitles if c["start"] <= t < c["end"]), None)
         if cue:
-            card = subtitle_card(cue["text"], self.W, self.H)
+            card = subtitle_card(cue["text"], self.W, self.H, scene.subtitle_font_size)
             frame.alpha_composite(card, ((self.W - card.width) // 2, max(0, round(self.H * 0.93) - card.height)))
         return frame
 

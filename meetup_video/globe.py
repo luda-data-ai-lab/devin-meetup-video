@@ -45,11 +45,18 @@ def globe_image(diameter, lat, lon):
     return Image.fromarray(np.dstack((np.clip(rgb, 0, 255).astype("uint8"), alpha)))
 
 
+def korea_names(regions):
+    return next((row.get("featured_names", []) for region in regions for row in region["countries"]
+                 if row["country"] == "South Korea"), [])
+
+
 def view_at(scene, t):
     regions = scene.globe["regions"]
-    i, phase = divmod(max(0, t) * (len(regions) + 1) / scene.duration, 1)
-    i = min(int(i), len(regions))
     stops = [{"lat": 18, "lon": -28}, *regions]
+    if korea_names(regions):
+        stops.append({"lat": 37.57, "lon": 126.98})
+    i, phase = divmod(max(0, t) * len(stops) / scene.duration, 1)
+    i = min(int(i), len(stops) - 1)
     stop, prev = stops[i], stops[max(i - 1, 0)]
     f = min(1, phase / 0.34)
     f = f * f * (3 - 2 * f)
@@ -66,10 +73,12 @@ def frame(scene, t, width, height):
     totals = [sum(row["count"] for row in region["countries"]) for region in regions]
     i, lat, lon = view_at(scene, t)
     worldwide = i == 0
+    featured_names = korea_names(regions)
+    korea = i > len(regions)
     if worldwide:
         name, count = "전 세계", sum(totals)
         rows = [(r["name"], n) for r, n in zip(regions, totals)]
-    else:
+    elif not korea:
         region = regions[i - 1]
         name, count = region["name"], totals[i - 1]
         rows = [(row["country"], row["count"]) for row in region["countries"]]
@@ -109,15 +118,22 @@ def frame(scene, t, width, height):
 
     globe(1385, 512, 355)
     label(100, 88, "DEVIN MEETUP SEOUL  /  AMBASSADOR NETWORK", 25, accent, mono=True)
-    label(100, 209, name, 71, max_width=800)
-    label(100, 346, count, 149, accent, mono=True, max_width=440)
-    label(100, 445, "활동 중인 앰버서더  /  ACTIVE AMBASSADORS", 27, muted)
-    roster(100, 525, 2, 408, min(53, 420 / math.ceil(len(rows) / 2)))
+    if korea:
+        label(100, 209, "대한민국", 71, max_width=800)
+        label(100, 305, "서울  /  SEOUL, SOUTH KOREA", 27, accent)
+        spacing = min(96, 536 / len(featured_names))
+        for j, featured_name in enumerate(featured_names):
+            label(100, 428 + j * spacing, featured_name, min(59, spacing * 0.75), max_width=800)
+    else:
+        label(100, 209, name, 71, max_width=800)
+        label(100, 346, count, 149, accent, mono=True, max_width=440)
+        label(100, 445, "활동 중인 앰버서더  /  ACTIVE AMBASSADORS", 27, muted)
+        roster(100, 525, 2, 408, min(53, 420 / math.ceil(len(rows) / 2)))
     if not worldwide:
         label(1820, 940, f"{abs(lat):05.1f}° {'N' if lat >= 0 else 'S'}  /  {abs(lon):05.1f}° {'E' if lon >= 0 else 'W'}",
               22, muted, "rm", mono=True)
 
     d.line((*xy(100, 1004), *xy(1820, 1004)), fill=line, width=max(1, round(k)))
     label(100, 1040, f"{len(regions):02d} REGIONS  /  {sum(len(r['countries']) for r in regions):02d} COUNTRIES", 21, muted, mono=True)
-    label(1820, 1040, f"{i + 1:02d} / {len(regions) + 1:02d}", 21, accent, "rm", mono=True)
+    label(1820, 1040, f"{i + 1:02d} / {len(regions) + 1 + bool(featured_names):02d}", 21, accent, "rm", mono=True)
     return image

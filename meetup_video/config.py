@@ -34,6 +34,7 @@ class Scene:
     globe: dict = field(default_factory=dict)
     subtitles: list = field(default_factory=list)
     subtitles_baked_in: bool = False
+    subtitle_font_size: int = 49
 
 
 @dataclass
@@ -100,6 +101,9 @@ def validate_globe_region(scene_id, region):
             raise ConfigError(f"scene {scene_id}: globe country needs a name")
         if type(count) is not int or count < 0:
             raise ConfigError(f"scene {scene_id}: globe count must be a nonnegative integer")
+        names = row.get("featured_names", [])
+        if not isinstance(names, list) or any(not isinstance(name, str) or not name.strip() for name in names):
+            raise ConfigError(f"scene {scene_id}: globe featured_names must be a list of nonblank names")
 
 
 def validate_clip(scene):
@@ -113,6 +117,8 @@ def validate_clip(scene):
         raise ConfigError(f"scene {scene.id}: invalid clip subtitles")
     if scene.subtitles_baked_in and scene.subtitles:
         raise ConfigError(f"scene {scene.id}: cannot add subtitles to a clip with burned-in subtitles")
+    if type(scene.subtitle_font_size) is not int or not 1 <= scene.subtitle_font_size <= 1080:
+        raise ConfigError(f"scene {scene.id}: subtitle font size must be an integer from 1 to 1080")
     previous_end = 0
     for cue in scene.subtitles:
         if not isinstance(cue, dict):
