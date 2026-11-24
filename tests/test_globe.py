@@ -2,7 +2,7 @@ import pytest
 from PIL import ImageDraw
 
 from meetup_video import config
-from meetup_video.globe import view_at
+from meetup_video.globe import frame, view_at
 from meetup_video.render import Renderer
 from meetup_video.roster import globe_project, read_roster
 
@@ -81,6 +81,38 @@ def test_korea_closing_stop_shows_only_its_featured_names(monkeypatch):
     korea = next(row for row in regions[-1]["countries"] if row["country"] == "South Korea")
     korea["featured_names"] = []
     assert view_at(scene, 15) == (6, 26, 115)
+
+
+def test_orbit_region_pins_and_seoul_name_zoom(monkeypatch):
+    scene = config.load(config.ROOT / "content" / "ambassadors.json").scenes[0]
+    scene.globe["regions"][2]["countries"][0]["count"] += 1
+    labels = []
+    draw_text = ImageDraw.ImageDraw.text
+
+    def capture(draw, xy, text, *args, anchor=None, font=None, fill=None, **kwargs):
+        labels.append((text, anchor, font.size, fill))
+        return draw_text(draw, xy, text, *args, anchor=anchor, font=font, fill=fill, **kwargs)
+
+    monkeypatch.setattr(ImageDraw.ImageDraw, "text", capture)
+    frame(scene, 0, 480, 270)
+    pin_counts = {text for text, anchor, _, _ in labels if anchor == "mm" and text.isdecimal()}
+    assert pin_counts == {"71", "22", "40", "4", "10", "46"}
+
+    labels.clear()
+    frame(scene, 7, 480, 270)
+    pins = {text: fill for text, anchor, _, fill in labels if anchor == "mm" and text.isdecimal()}
+    assert pins["40"] == "#76f7ce"
+    assert len(pins) > 1
+    assert all(fill == "#f0faf8" for text, fill in pins.items() if text != "40")
+
+    names = {"James Yeon", "Jaden Son", "Jeongmin Lee"}
+    sizes = []
+    for t in (14.55, 15.7):
+        labels.clear()
+        frame(scene, t, 480, 270)
+        sizes.append({text: size for text, _, size, _ in labels if text in names})
+    assert sizes[0].keys() == sizes[1].keys() == names
+    assert all(sizes[0][name] < sizes[1][name] for name in names)
 
 
 def test_globe_motion_and_frame_size():
