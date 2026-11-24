@@ -14,8 +14,8 @@ REGIONS = {
     "Middle East": ("Middle East", 25, 48),
     "Asia-Pacific": ("Asia-Pacific", 26, 115),
 }
-COUNTRIES = {"USA": "United States", "UK": "United Kingdom", "UAE": "United Arab Emirates",
-             "Korea": "South Korea"}
+COUNTRIES = {"usa": "United States", "uk": "United Kingdom", "uae": "United Arab Emirates",
+             "korea": "South Korea"}
 CITY_ALIASES = {"sao paulo": "São Paulo", "nyc": "New York City", "new york": "New York City",
                 "bangalore": "Bengaluru", "i̇stanbul": "Istanbul",
                 "ottowa": "Ottawa", "deleware": "Delaware", "cancun": "Cancún",
@@ -27,9 +27,14 @@ CITY_ALIASES = {"sao paulo": "São Paulo", "nyc": "New York City", "new york": "
 CITY_COORDINATES = Path(__file__).resolve().parent.parent / "assets" / "ambassador-city-coordinates.json"
 
 
+def country_name(country):
+    country = unicodedata.normalize("NFC", " ".join(country.split()))
+    return COUNTRIES.get(country.casefold(), country)
+
+
 def city_key(country, city):
     city = unicodedata.normalize("NFC", " ".join(city.split())).casefold()
-    return country, CITY_ALIASES.get(city, city).casefold()
+    return country_name(country).casefold(), CITY_ALIASES.get(city, city).casefold()
 
 
 def read_roster(lines):
@@ -48,7 +53,7 @@ def read_roster(lines):
         region = raw_region or region
         if region not in REGIONS:
             raise ValueError(f"Roster line {line}: unknown region {region!r}")
-        yield region, COUNTRIES.get(country, country), CITY_ALIASES.get(city.casefold(), city)
+        yield region, country_name(country), CITY_ALIASES.get(city.casefold(), city)
 
 
 def globe_project(lines, existing_regions=()):

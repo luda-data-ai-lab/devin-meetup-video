@@ -29,11 +29,12 @@ def test_roster_counts_rows_not_distinct_cities():
     assert (nyc["name"], nyc["count"], nyc["lat"], nyc["lon"]) == ("New York City", 2, 40.7143, -74.006)
 
 
-def test_roster_refresh_keeps_saved_city_names_and_coordinates(tmp_path, monkeypatch, capsys):
+@pytest.mark.parametrize("saved_country", ["United States", "USA"])
+def test_roster_refresh_keeps_saved_city_names_and_coordinates(tmp_path, monkeypatch, capsys, saved_country):
     project = globe_project(ROSTER)
     regions = project["scenes"][0]["globe"]["regions"]
     city = regions[0]["cities"][0]
-    city.update(name="NYC Metro", roster_city=city["name"], lat=40.5, lon=-73.9)
+    city.update(name="NYC Metro", country=saved_country, roster_city=city["name"], lat=40.5, lon=-73.9)
     regions[1]["countries"][0]["featured_names"] = ["James Yeon"]
     project_path = tmp_path / "ambassadors.json"
     project_path.write_text(json.dumps(project), encoding="utf-8")
