@@ -71,25 +71,26 @@ def subtitle_card(text, width, height, font_size):
     k = min(width / 1920, height / 1080)
     size = max(1, round(font_size * k))
     pad = max(1, round(16 * k))
-    font = fonts.kr(size)
     limit = width * 0.84 - 2 * pad
-    lines = []
-    for paragraph in text.splitlines():
-        line = ""
-        for word in paragraph.split():
-            candidate = f"{line} {word}" if line else word
-            if line and font.getlength(candidate) > limit:
-                lines.append(line)
-                line = word
-            else:
-                line = candidate
-        lines.append(line)
-    text = "\n".join(lines)
-    while size > 1:
+    paragraphs = [paragraph.split() for paragraph in text.splitlines()]
+    while True:
         font = fonts.kr(size)
-        if max(font.getlength(line) for line in lines) <= limit and (size + pad) * len(lines) < height * 0.7:
+        lines = []
+        for words in paragraphs:
+            line = ""
+            for word in words:
+                candidate = f"{line} {word}" if line else word
+                if line and font.getlength(candidate) > limit:
+                    lines.append(line)
+                    line = word
+                else:
+                    line = candidate
+            lines.append(line)
+        if size == 1 or ((size + pad) * len(lines) < height * 0.7
+                         and all(font.getlength(line) <= limit for line in lines)):
             break
         size -= 1
+    text = "\n".join(lines)
     spacing = max(1, size // 5)
     left, top, right, bottom = ImageDraw.Draw(Image.new("RGBA", (1, 1))).multiline_textbbox(
         (0, 0), text, font=font, spacing=spacing, align="center")
