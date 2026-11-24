@@ -75,4 +75,6 @@ cd D:\01_luda\project\luda-data-ai-lab\devin-meetup-video; python -m meetup_vide
 
    최종 출력은 1920×1080, 초당 30프레임, 48 kHz 스테레오 AAC입니다. 세로 영상은 좌우 여백을 넣어 잘리지 않으며, 인사 영상의 음량은 일정한 기준으로 맞추고 새 한국어 자막은 화면에 직접 넣습니다.
 
+Nader Dabit의 환영 인사를 넣은 별도 버전은 받은 MP4를 `assets/footage/nader-dabit-welcome.mp4`로 저장한 뒤 **ambassadors-nader**를 열면 됩니다. Nader 영상은 기본으로 맨 마지막에 있으며 순서와 한글 자막을 수정할 수 있습니다. **최종 렌더**는 기존 **ambassadors** 영상을 덮어쓰지 않고 별도 파일을 만듭니다. 명령줄에서는 `python -m meetup_video render --config content/ambassadors-nader.json --out out/ambassador-reel-nader.mp4`를 실행합니다.
+
 `content/ambassadors.json`을 직접 고칠 때는 `scenes` 배열의 순서가 재생 순서입니다. `clip` 장면에는 로컬 영상 경로 `video`, 필요시 원본 시작 시간 `video_start`(초), 재생 길이 `duration`을 설정합니다. `subtitles`에는 `{"start": 1.36, "end": 2.5, "text": "안녕하세요"}` 형식으로 자막을 넣습니다. 원본에 한국어 자막이 들어 있으면 `subtitles_baked_in: true`로 설정하고 별도 자막은 넣지 않습니다. 새 `Region / Country / City` TSV가 있으면 `python -m meetup_video.roster path/to/roster.tsv`를 실행한 뒤, 결과의 `globe.regions` 부분만 인트로 장면에 붙여 넣으면 기존 영상 설정을 그대로 유지할 수 있습니다.

@@ -58,6 +58,36 @@ def test_globe_counts_and_featured_names_persist_through_editor(server):
     assert json.loads(req(goal)[1]) == data
 
 
+def test_nader_reel_is_discoverable_and_editable_as_a_separate_project(server):
+    base, default, _ = server
+    for name in ("ambassadors", "ambassadors-nader"):
+        project = config.DEFAULT_CONFIG.with_name(f"{name}.json")
+        shutil.copy(project, default.parent)
+
+    listed = json.loads(req(base + "/api/projects")[1])
+    assert {project["name"] for project in listed["projects"]} >= {"ambassadors", "ambassadors-nader"}
+    original_url = base + "/api/config?name=ambassadors"
+    nader_url = original_url + "-nader"
+    original = json.loads(req(original_url)[1])
+    variant = json.loads(req(nader_url)[1])
+    clip = variant["scenes"].pop()
+    assert variant == original
+    assert (clip["id"], clip["video"], clip["type"]) == (
+        "nader-dabit", "assets/footage/nader-dabit-welcome.mp4", "clip")
+    assert clip["subtitle_font_size"] == original["scenes"][-1]["subtitle_font_size"]
+    cues = clip["subtitles"]
+    assert len(cues) == 17
+    assert [cue["start"] for cue in cues[:3]] == [0, 0.72, 1.94]
+    assert [cue["end"] for cue in cues[:-1]] == [cue["start"] for cue in cues[1:]]
+    assert cues[-1]["end"] == 59.26 < clip["duration"]
+
+    variant["scenes"].insert(-1, clip)
+    cues[0]["text"] = "안녕하세요, 여러분!"
+    assert req(nader_url, "PUT", json.dumps(variant).encode())[0] == 200
+    assert json.loads(req(nader_url)[1]) == variant
+    assert json.loads(req(original_url)[1]) == original
+
+
 def test_save_valid_config_and_reject_invalid(server):
     base, cfg, _ = server
     data = json.loads(req(base + "/api/config")[1])
