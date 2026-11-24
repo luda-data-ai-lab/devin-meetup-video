@@ -140,6 +140,15 @@ function globeEditor(scene, index) {
       label.append(input); countries.append(label);
     });
     details.append(summary, countries); card.append(details);
+    const korea = region.countries.find(row => row.country === "South Korea");
+    if (korea) {
+      const names = field(korea, "featured_names", "한국 앰버서더 이름 (한 줄에 한 명) · South Korea ambassador names (one per line)", "lines");
+      const id = `featured-names-${index}-${i}`;
+      names.querySelector("textarea").id = id;
+      names.querySelector("label").htmlFor = id;
+      names.style.padding = "4px 12px 10px";
+      details.append(names);
+    }
   });
   updateCounts();
   return card;
@@ -175,6 +184,11 @@ function clipEditor(scene, index, clipIndices) {
   const cues = scene.subtitles ??= [];
   const section = document.createElement("details"); section.className = "clip-cues";
   const summary = document.createElement("summary"); summary.textContent = "한글 자막 · Korean subtitle cues";
+  const size = field(scene, "subtitle_font_size", "자막 글자 크기 · Subtitle font size (px at 1080p)", "number");
+  const sizeInput = size.querySelector("input");
+  sizeInput.value = scene.subtitle_font_size ?? 49;
+  sizeInput.min = 1; sizeInput.max = 1080; sizeInput.step = 1;
+  sizeInput.setAttribute("aria-label", "자막 글자 크기 · Subtitle font size (px at 1080p)");
   const rows = document.createElement("div");
   const add = document.createElement("button"); add.className = "alt"; add.textContent = "+ 자막 추가 Add cue";
   function drawCues() {
@@ -200,7 +214,7 @@ function clipEditor(scene, index, clipIndices) {
     cues.push({start, end: Math.min(start + 2, scene.duration), text: ""}); dirty = true; drawCues();
     rows.lastElementChild.querySelector("textarea").focus();
   };
-  drawCues(); section.append(summary, rows, add); card.append(section);
+  drawCues(); section.append(summary, size, rows, add); card.append(section);
   return card;
 }
 function draw() {

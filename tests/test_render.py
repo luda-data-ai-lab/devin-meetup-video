@@ -3,9 +3,10 @@ import subprocess
 from array import array
 
 import pytest
+from PIL import ImageChops, ImageDraw
 
 from meetup_video import config
-from meetup_video.render import Renderer
+from meetup_video.render import Renderer, subtitle_card
 
 
 def small_cfg(tmp_path):
@@ -101,7 +102,31 @@ def test_joined_clip_keeps_portrait_audio_and_burns_subtitles(tmp_path):
     assert before.getpixel((0, 90)) == (0, 0, 0)
     assert before.getpixel((160, 90))[0] > 240
     assert before.tobytes() == after.tobytes() != captioned.tobytes()
+    data["scenes"][1]["subtitle_font_size"] = 36
+    renderer.cfg.scenes[1].subtitle_font_size = config.parse(data).scenes[1].subtitle_font_size
+    smaller = renderer.frame_at(1.3)
+    normal_box = ImageChops.difference(before, captioned).getbbox()
+    smaller_box = ImageChops.difference(before, smaller).getbbox()
+    assert smaller_box is not None
+    assert smaller_box[2] - smaller_box[0] < normal_box[2] - normal_box[0]
+    assert smaller_box[3] - smaller_box[1] < normal_box[3] - normal_box[1]
     renderer._videos["clip"].close()
+
+
+def test_subtitle_font_size_does_not_shrink_when_setting_increases(monkeypatch):
+    actual_sizes = []
+    draw_text = ImageDraw.ImageDraw.multiline_text
+
+    def capture_size(draw, xy, text, *args, font, **kwargs):
+        actual_sizes.append(font.size)
+        return draw_text(draw, xy, text, *args, font=font, **kwargs)
+
+    monkeypatch.setattr(ImageDraw.ImageDraw, "multiline_text", capture_size)
+    cue = " ".join(["서울에 오신 걸 환영합니다!"] * 5)
+    for size in (120, 144):
+        subtitle_card(cue, 1920, 1080, size)
+    smaller, larger = actual_sizes
+    assert 120 == smaller <= larger <= 144
 
 
 def test_clip_rejects_double_subtitles_and_invalid_timing():
@@ -111,6 +136,8 @@ def test_clip_rejects_double_subtitles_and_invalid_timing():
         config.parse({"scenes": [{**clip, "subtitles_baked_in": True}]})
     with pytest.raises(config.ConfigError, match="subtitle times"):
         config.parse({"scenes": [{**clip, "subtitles": [{"start": 0, "end": 1.1, "text": "안녕하세요"}]}]})
+    with pytest.raises(config.ConfigError, match="subtitle font size"):
+        config.parse({"scenes": [{**clip, "subtitle_font_size": 0}]})
 
 
 def test_ending_qr_toggle(tmp_path):

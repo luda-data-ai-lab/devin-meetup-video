@@ -8,7 +8,7 @@
     {
       "id": "ambassador-globe",
       "type": "globe",
-      "duration": 14,
+      "duration": 16,
       "globe": {
         "regions": [
           {
@@ -197,7 +197,8 @@
               },
               {
                 "country": "South Korea",
-                "count": 3
+                "count": 3,
+                "featured_names": ["James Yeon", "Jaden Son", "Jeongmin Lee"]
               },
               {
                 "country": "Bangladesh",
@@ -255,6 +256,7 @@
       "type": "clip",
       "video": "assets/footage/ambassador-abu-dhabi.mp4",
       "duration": 39.1,
+      "subtitle_font_size": 36,
       "subtitles": [
         {"start": 1.36, "end": 2.5, "text": "평화가 함께하시길 바랍니다."},
         {"start": 2.66, "end": 7.54, "text": "안녕하세요, 여러분. 저는 함자 알카마르입니다.\n아랍에미리트 아부다비에서 Devin 앰버서더로 활동하고 있어요."},
