@@ -10,6 +10,7 @@ from http.server import ThreadingHTTPServer
 import pytest
 
 from meetup_video import config, editor
+from meetup_video.roster import globe_project
 
 
 @pytest.fixture
@@ -43,6 +44,17 @@ def test_page_and_manual_served(server):
     assert req(base + "/manual/ko") == (200, "# 매뉴얼".encode())
 
 
+def test_globe_counts_persist_through_editor(server):
+    base, _, _ = server
+    project = globe_project(["Region\tCountry\tCity", "Asia-Pacific\tKorea\tSeoul"])
+    goal = base + "/api/config?name=ambassadors"
+    assert req(goal, "PUT", json.dumps(project).encode())[0] == 200
+    data = json.loads(req(goal)[1])
+    data["scenes"][0]["globe"]["regions"][0]["countries"][0]["count"] = 7
+    assert req(goal, "PUT", json.dumps(data).encode())[0] == 200
+    assert json.loads(req(goal)[1]) == data
+
+
 def test_save_valid_config_and_reject_invalid(server):
     base, cfg, _ = server
     data = json.loads(req(base + "/api/config")[1])
@@ -72,6 +84,33 @@ def test_upload_music_and_serve_it(server):
     assert code == 200 and json.loads(body)["file"] == "assets/music/my_song.mp3"
     assert req(base + "/files/assets/music/my_song.mp3") == (200, b"ID3")
     assert req(base + "/api/upload-music/x.exe", "POST", b"x")[0] == 400
+
+
+def test_mp4_serves_byte_ranges(server):
+    base, _, root = server
+    (root / "out").mkdir()
+    (root / "out" / "preview.mp4").write_bytes(b"0123456789")
+    url = base + "/files/out/preview.mp4?timestamp=1"
+    for header, status, content_range, body in (
+        ("", 200, None, b"0123456789"),
+        ("bytes=0-0", 206, "bytes 0-0/10", b"0"),
+        ("bytes=4-", 206, "bytes 4-9/10", b"456789"),
+        ("bytes=-2", 206, "bytes 8-9/10", b"89"),
+        ("bytes=7-15", 206, "bytes 7-9/10", b"789"),
+        ("bytes=10-", 416, "bytes */10", b""),
+        ("bytes=0-1,3-5", 200, None, b"0123456789"),
+    ):
+        request = urllib.request.Request(url, headers={"Range": header} if header else {})
+        try:
+            response = urllib.request.urlopen(request)
+        except urllib.error.HTTPError as e:
+            response = e
+        with response:
+            assert response.status == status
+            assert response.headers["Accept-Ranges"] == "bytes"
+            assert response.headers["Content-Length"] == str(len(body))
+            assert response.headers["Content-Range"] == content_range
+            assert response.read() == body
 
 
 @pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg not installed")

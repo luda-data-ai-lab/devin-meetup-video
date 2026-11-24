@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+from array import array
 
 import pytest
 
@@ -73,6 +74,43 @@ def test_video_scene_requires_path_and_known_sprite():
         config.parse({"scenes": [{"id": "v", "type": "video", "duration": 1}]})
     with pytest.raises(config.ConfigError, match="sprite"):
         config.parse({"scenes": [{"id": "v", "duration": 1, "characters": [{"sprite": "cat"}]}]})
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg") or not shutil.which("ffprobe"), reason="ffmpeg/ffprobe not installed")
+def test_joined_clip_keeps_portrait_audio_and_burns_subtitles(tmp_path):
+    clip = tmp_path / "portrait.mp4"
+    subprocess.run(["ffmpeg", "-loglevel", "error", "-f", "lavfi", "-i", "color=red:s=64x96:r=10:d=1",
+                    "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=44100:duration=1",
+                    "-pix_fmt", "yuv420p", "-c:a", "aac", str(clip)], check=True)
+    data = {"video": {"width": 320, "height": 180, "fps": 10},
+            "scenes": [{"id": "intro", "duration": 1},
+                       {"id": "clip", "type": "clip", "duration": 1, "video": str(clip),
+                        "subtitles": [{"start": 0.2, "end": 0.6, "text": "안녕하세요\n서울에 오신 걸 환영합니다!"}]}]}
+    renderer = Renderer(config.parse(data), cache_dir=tmp_path / "cache")
+    out = renderer.render(tmp_path / "reel.mp4")
+    probe = subprocess.check_output(["ffprobe", "-v", "error", "-show_entries",
+                                     "stream=codec_name,width,height,r_frame_rate,channels,sample_rate",
+                                     "-of", "compact=p=0", str(out)], text=True).splitlines()
+    assert probe == ["codec_name=h264|width=320|height=180|r_frame_rate=10/1",
+                     "codec_name=aac|sample_rate=48000|channels=2|r_frame_rate=0/0"]
+    pcm = subprocess.check_output(["ffmpeg", "-v", "error", "-i", str(out), "-vn", "-f", "s16le", "-ac", "1", "-"])
+    samples = array("h", pcm)
+    assert max(map(abs, samples[1000:47000])) == 0
+    assert max(map(abs, samples[50000:90000])) > 100
+    before, captioned, after = [renderer.frame_at(t) for t in (1.1, 1.3, 1.7)]
+    assert before.getpixel((0, 90)) == (0, 0, 0)
+    assert before.getpixel((160, 90))[0] > 240
+    assert before.tobytes() == after.tobytes() != captioned.tobytes()
+    renderer._videos["clip"].close()
+
+
+def test_clip_rejects_double_subtitles_and_invalid_timing():
+    clip = {"id": "c", "type": "clip", "duration": 1, "video": "local.mp4",
+            "subtitles": [{"start": 0, "end": 0.5, "text": "안녕하세요"}]}
+    with pytest.raises(config.ConfigError, match="burned-in"):
+        config.parse({"scenes": [{**clip, "subtitles_baked_in": True}]})
+    with pytest.raises(config.ConfigError, match="subtitle times"):
+        config.parse({"scenes": [{**clip, "subtitles": [{"start": 0, "end": 1.1, "text": "안녕하세요"}]}]})
 
 
 def test_ending_qr_toggle(tmp_path):

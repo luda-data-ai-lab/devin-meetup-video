@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import shutil
 import threading
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -92,6 +93,45 @@ def make_handler(cfg_path, job):
                 return self.send(404, {"error": "not found"})
             self.send(200, p.read_bytes(), ctype)
 
+        def video_file(self, path):
+            if not path.is_file():
+                return self.send(404, {"error": "not found"})
+            with path.open("rb") as stream:
+                size = os.fstat(stream.fileno()).st_size
+                range_header = self.headers.get("Range", "").strip()
+                match = re.fullmatch(r"bytes=([0-9]{0,20})-([0-9]{0,20})", range_header, re.IGNORECASE)
+                partial = match and any(match.groups()) and not self.headers.get("If-Range")
+                start, end, status = 0, size - 1, 200
+                if partial:
+                    first, last = match.groups()
+                    if first:
+                        start = int(first)
+                        if last:
+                            end = min(end, int(last))
+                    else:
+                        start = max(0, size - int(last))
+                    status = 206 if start <= end else 416
+                remaining = 0 if status == 416 else end - start + 1
+                try:
+                    self.send_response(status)
+                    self.send_header("Content-Type", "video/mp4")
+                    self.send_header("Accept-Ranges", "bytes")
+                    self.send_header("Content-Length", str(remaining))
+                    if status == 206:
+                        self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+                    elif status == 416:
+                        self.send_header("Content-Range", f"bytes */{size}")
+                    self.end_headers()
+                    if status == 200:
+                        shutil.copyfileobj(stream, self.wfile)
+                    elif status == 206:
+                        stream.seek(start)
+                        while remaining and (chunk := stream.read(min(remaining, 65536))):
+                            self.wfile.write(chunk)
+                            remaining -= len(chunk)
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+
         def do_GET(self):
             path, _, query = self.path.partition("?")
             path = urllib.parse.unquote(path)
@@ -122,7 +162,9 @@ def make_handler(cfg_path, job):
             if m:
                 p = config.ROOT / m[1]
                 ext = p.suffix.lower()
-                ctype = "video/mp4" if ext == ".mp4" else MUSIC_EXT.get(ext) or f"image/{ext.lstrip('.').replace('jpg', 'jpeg')}"
+                if ext == ".mp4":
+                    return self.video_file(p)
+                ctype = MUSIC_EXT.get(ext) or f"image/{ext.lstrip('.').replace('jpg', 'jpeg')}"
                 return self.file(p, ctype)
             self.send(404, {"error": "not found"})
 

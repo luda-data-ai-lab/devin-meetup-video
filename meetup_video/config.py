@@ -1,4 +1,5 @@
 import json
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -30,6 +31,9 @@ class Scene:
     video_start: float = 0.0
     blur_faces: bool = False
     characters: list = field(default_factory=list)
+    globe: dict = field(default_factory=dict)
+    subtitles: list = field(default_factory=list)
+    subtitles_baked_in: bool = False
 
 
 @dataclass
@@ -67,6 +71,61 @@ def load(path=DEFAULT_CONFIG):
     return parse(data)
 
 
+def validate_globe(scene):
+    g = scene.globe
+    if not math.isfinite(scene.duration):
+        raise ConfigError(f"scene {scene.id}: globe duration must be finite")
+    regions = g.get("regions") if isinstance(g, dict) else None
+    if not isinstance(regions, list) or not regions:
+        raise ConfigError(f"scene {scene.id}: globe needs at least one region")
+    for region in regions:
+        validate_globe_region(scene.id, region)
+
+
+def validate_globe_region(scene_id, region):
+    if not isinstance(region, dict) or not isinstance(region.get("name"), str) or not region["name"].strip():
+        raise ConfigError(f"scene {scene_id}: globe region needs a name")
+    countries = region.get("countries")
+    if not isinstance(countries, list) or not countries:
+        raise ConfigError(f"scene {scene_id}: globe region needs at least one country")
+    for key, limit in (("lat", 90), ("lon", 180)):
+        coord = region.get(key)
+        if type(coord) not in (int, float) or not -limit <= coord <= limit:
+            raise ConfigError(f"scene {scene_id}: globe region {key} must be between {-limit} and {limit}")
+    for row in countries:
+        if not isinstance(row, dict):
+            raise ConfigError(f"scene {scene_id}: globe country must be an object")
+        country, count = row.get("country"), row.get("count")
+        if not isinstance(country, str) or not country.strip():
+            raise ConfigError(f"scene {scene_id}: globe country needs a name")
+        if type(count) is not int or count < 0:
+            raise ConfigError(f"scene {scene_id}: globe count must be a nonnegative integer")
+
+
+def validate_clip(scene):
+    if not isinstance(scene.video, str) or not scene.video.strip():
+        raise ConfigError(f"scene {scene.id}: clips need a video path")
+    if not math.isfinite(scene.duration):
+        raise ConfigError(f"scene {scene.id}: clip duration must be finite")
+    if type(scene.video_start) not in (int, float) or not math.isfinite(scene.video_start) or scene.video_start < 0:
+        raise ConfigError(f"scene {scene.id}: clip video_start must be a nonnegative number")
+    if type(scene.subtitles_baked_in) is not bool or not isinstance(scene.subtitles, list):
+        raise ConfigError(f"scene {scene.id}: invalid clip subtitles")
+    if scene.subtitles_baked_in and scene.subtitles:
+        raise ConfigError(f"scene {scene.id}: cannot add subtitles to a clip with burned-in subtitles")
+    previous_end = 0
+    for cue in scene.subtitles:
+        if not isinstance(cue, dict):
+            raise ConfigError(f"scene {scene.id}: invalid subtitle cue")
+        start, end, text = cue.get("start"), cue.get("end"), cue.get("text")
+        if (type(start) not in (int, float) or type(end) not in (int, float)
+                or not previous_end <= start < end <= scene.duration):
+            raise ConfigError(f"scene {scene.id}: subtitle times must be in order, non-overlapping, and within the clip")
+        if not isinstance(text, str) or not text.strip():
+            raise ConfigError(f"scene {scene.id}: subtitle text cannot be empty")
+        previous_end = end
+
+
 def parse(data, base_dir=ROOT):
     video = data.get("video", {})
     scenes = []
@@ -79,8 +138,8 @@ def parse(data, base_dir=ROOT):
         seen.add(raw["id"])
         if float(raw.get("duration", 0)) <= 0:
             raise ConfigError(f"scene {raw['id']}: duration must be > 0")
-        if raw.get("type", "image") not in ("image", "video", "ending"):
-            raise ConfigError(f"scene {raw['id']}: type must be image, video or ending")
+        if raw.get("type", "image") not in ("image", "video", "ending", "globe", "clip"):
+            raise ConfigError(f"scene {raw['id']}: type must be image, video, ending, globe or clip")
         if raw.get("type") == "video" and not raw.get("video"):
             raise ConfigError(f"scene {raw['id']}: video scenes need a video path")
         for c in raw.get("characters", []):
@@ -88,6 +147,10 @@ def parse(data, base_dir=ROOT):
                 raise ConfigError(f"scene {raw['id']}: sprite must be one of {', '.join(SPRITES)}")
         s = Scene(**{k: v for k, v in raw.items() if k in Scene.__dataclass_fields__})
         s.duration = float(s.duration)
+        if s.type == "globe":
+            validate_globe(s)
+        if s.type == "clip":
+            validate_clip(s)
         try:
             s.zoom = tuple(float(z) for z in s.zoom)
         except (TypeError, ValueError):
