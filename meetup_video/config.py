@@ -37,6 +37,10 @@ class Scene:
     subtitles_baked_in: bool = False
     subtitle_font_size: int = 49
 
+    @property
+    def timeline_duration(self):
+        return self.duration + (self.globe.get("end_hold", 0) if self.type == "globe" else 0)
+
 
 @dataclass
 class Config:
@@ -53,7 +57,7 @@ class Config:
 
     @property
     def total_duration(self):
-        return sum(s.duration for s in self.scenes)
+        return sum(s.timeline_duration for s in self.scenes)
 
     def path(self, rel):
         p = Path(rel)
@@ -80,6 +84,9 @@ def validate_globe(scene):
     regions = g.get("regions") if isinstance(g, dict) else None
     if not isinstance(regions, list) or not regions:
         raise ConfigError(f"scene {scene.id}: globe needs at least one region")
+    hold = g.get("end_hold", 0)
+    if type(hold) not in (int, float) or not 0 <= hold < math.inf or not math.isfinite(scene.timeline_duration):
+        raise ConfigError(f"scene {scene.id}: globe end_hold must be a finite nonnegative number")
     for region in regions:
         validate_globe_region(scene.id, region)
 

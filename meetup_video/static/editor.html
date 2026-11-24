@@ -48,7 +48,7 @@ video{width:100%;margin-top:10px;border-radius:8px}
 .globe-banner small{font-size:11px;font-weight:700;letter-spacing:.08em}
 .globe-total{white-space:nowrap;font-size:24px}
 .globe-help{margin:12px 0;color:#a9b8cc;font-size:13px}
-.globe-settings{max-width:180px;margin-bottom:14px}
+.globe-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:380px;margin-bottom:14px}
 .globe-region{background:#111727;border:1px solid #2a3350;border-radius:8px;margin-top:6px}
 .globe-region summary{cursor:pointer;padding:10px 12px;color:#e8ecf2;font-weight:700}
 .globe-region summary span{float:right;color:var(--globe-accent)}
@@ -112,7 +112,8 @@ function field(obj, key, label, type="text") {
 }
 const durationFormat = new Intl.NumberFormat("ko-KR", {maximumFractionDigits: 2, useGrouping: false});
 function total() {
-  const duration = cfg.scenes.reduce((a, s) => a + Number(s.duration || 0), 0);
+  const duration = cfg.scenes.reduce((a, s) => a + Number(s.duration || 0)
+    + (s.type === "globe" ? Number(s.globe.end_hold || 0) : 0), 0);
   $("#total").textContent = "총 " + durationFormat.format(duration) + "초";
 }
 function cityEditor(region, index, regionIndex) {
@@ -160,7 +161,13 @@ function globeEditor(scene, index) {
   card.innerHTML = `<div class="globe-banner"><div><small>AMBASSADOR NETWORK · SCENE ${index + 1}</small><h3>앰버서더 인트로 · Orbit</h3></div><div class="globe-total"></div></div>
     <p class="globe-help">국가별 인원을 수정하면 지역과 전 세계 합계가 자동으로 갱신됩니다.</p>
     <div class="globe-settings"></div>`;
-  card.querySelector(".globe-settings").append(field(scene, "duration", "시간(초) Duration", "number"));
+  const hold = field(g, "end_hold", "마지막 정지(초) End hold", "number");
+  const holdInput = hold.querySelector("input");
+  holdInput.value = g.end_hold ?? 0;
+  holdInput.min = "0";
+  holdInput.id = `end-hold-${index}`;
+  hold.querySelector("label").htmlFor = holdInput.id;
+  card.querySelector(".globe-settings").append(field(scene, "duration", "시간(초) Duration", "number"), hold);
   const totals = [];
   function updateCounts() {
     let worldwide = 0;

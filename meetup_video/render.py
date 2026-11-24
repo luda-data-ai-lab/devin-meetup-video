@@ -377,9 +377,10 @@ class Renderer:
         start = 0.0
         last = len(self.cfg.scenes) - 1
         for i, s in enumerate(self.cfg.scenes):
-            if gt < start + s.duration or i == last:
-                return i, min(gt - start, s.duration)
-            start += s.duration
+            end = start + s.timeline_duration
+            if gt < end or i == last:
+                return i, min(gt - start, s.timeline_duration)
+            start = end
 
     def frame_at(self, gt):
         i, t = self.locate(gt)
@@ -423,7 +424,7 @@ class Renderer:
         for i, scene in enumerate(self.cfg.scenes):
             label = f"audio{i}"
             labels.append(f"[{label}]")
-            duration = scene.duration
+            duration = scene.timeline_duration
             stream = False
             if scene.type == "clip":
                 path = self.clip_path(scene)

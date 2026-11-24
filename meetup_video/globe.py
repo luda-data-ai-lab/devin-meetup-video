@@ -10,6 +10,7 @@ from . import fonts
 
 LAND = Path(__file__).resolve().parent.parent / "assets" / "ambassador-land.png"
 OCEAN, LAND_COLOR, GRID_COLOR = map(np.array, ((10, 31, 54), (46, 143, 146), (75, 186, 179)))
+ROTATION_FRACTION, ZOOM_FRACTION = 0.34, 0.72
 
 
 @lru_cache(maxsize=1)
@@ -50,15 +51,22 @@ def korea_names(regions):
                  if row["country"] == "South Korea"), [])
 
 
+def orbit_position(scene, t, stops, final_fraction):
+    if "end_hold" in scene.globe:
+        return min(1, max(0, t) / scene.duration) * (stops - 1 + final_fraction)
+    return max(0, t) * stops / scene.duration
+
+
 def view_at(scene, t):
     regions = scene.globe["regions"]
     stops = [{"lat": 18, "lon": -28}, *regions]
-    if korea_names(regions):
+    has_korea = bool(korea_names(regions))
+    if has_korea:
         stops.append({"lat": 37.57, "lon": 126.98})
-    i, phase = divmod(max(0, t) * len(stops) / scene.duration, 1)
+    i, phase = divmod(orbit_position(scene, t, len(stops), ZOOM_FRACTION if has_korea else ROTATION_FRACTION), 1)
     i = min(int(i), len(stops) - 1)
     stop, prev = stops[i], stops[max(i - 1, 0)]
-    f = min(1, phase / 0.34)
+    f = min(1, phase / ROTATION_FRACTION)
     f = f * f * (3 - 2 * f)
     if t >= scene.duration:
         f = 1
@@ -87,8 +95,8 @@ def frame(scene, t, width, height):
     korea = i > len(regions)
     zoom = 0
     if korea:
-        phase = t * (len(regions) + 2) / scene.duration - i
-        p = max(0, min(1, phase / 0.72))
+        phase = orbit_position(scene, t, len(regions) + 2, ZOOM_FRACTION) - i
+        p = max(0, min(1, phase / ZOOM_FRACTION))
         zoom = p * p * (3 - 2 * p)
     cities = []
     if worldwide:

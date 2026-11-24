@@ -42,7 +42,7 @@ def test_globe_rejects_invalid_featured_names(bad):
 
 def test_roster_project_matches_supplied_regional_totals():
     scene = config.load(config.ROOT / "content" / "ambassadors.json").scenes[0]
-    assert scene.duration == 16
+    assert scene.duration == 15.44
     regions = scene.globe["regions"]
     assert [sum(c["count"] for c in r["countries"]) for r in regions] == [71, 22, 39, 4, 10, 46]
     assert sum(len(r["countries"]) for r in regions) == 45
@@ -80,7 +80,7 @@ def test_korea_closing_stop_shows_only_its_featured_names(monkeypatch):
 
     korea = next(row for row in regions[-1]["countries"] if row["country"] == "South Korea")
     korea["featured_names"] = []
-    assert view_at(scene, 15) == (6, 26, 115)
+    assert view_at(scene, scene.duration) == (6, 26, 115)
 
 
 def test_orbit_region_pins_and_seoul_name_zoom(monkeypatch):
@@ -139,6 +139,20 @@ def test_regional_tour_draws_editable_city_pins_only_on_map(monkeypatch):
     labels.clear()
     frame(scene, 15.7, 480, 270)
     assert not any(text == expected for text, _ in labels)
+
+
+@pytest.mark.parametrize("project", ["ambassadors", "ambassadors-nader"])
+def test_orbit_holds_the_finished_map_for_three_seconds(project):
+    cfg = config.load(config.ROOT / "content" / f"{project}.json")
+    cfg.width, cfg.height = 480, 270
+    scene = cfg.scenes[0]
+    renderer = Renderer(cfg)
+    assert scene.globe["end_hold"] == 3
+    assert scene.timeline_duration == pytest.approx(18.44)
+    assert renderer.locate(scene.timeline_duration) == (1, 0)
+    start = renderer.frame_at(scene.duration).tobytes()
+    assert renderer.frame_at(scene.duration - 0.2).tobytes() != start
+    assert renderer.frame_at(scene.timeline_duration - 1 / cfg.fps).tobytes() == start
 
 
 def test_globe_motion_and_frame_size():
