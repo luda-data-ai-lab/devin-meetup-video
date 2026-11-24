@@ -32,9 +32,13 @@ def country_name(country):
     return COUNTRIES.get(country.casefold(), country)
 
 
+def country_key(country):
+    return country_name(country).casefold()
+
+
 def city_key(country, city):
     city = unicodedata.normalize("NFC", " ".join(city.split())).casefold()
-    return country_name(country).casefold(), CITY_ALIASES.get(city, city).casefold()
+    return country_key(country), CITY_ALIASES.get(city, city).casefold()
 
 
 def read_roster(lines):
@@ -60,9 +64,10 @@ def globe_project(lines, existing_regions=()):
     counts = {region: Counter() for region in REGIONS}
     city_counts = {region: Counter() for region in REGIONS}
     coordinates = json.loads(CITY_COORDINATES.read_text(encoding="utf-8"))
-    country_names = {name.casefold(): name for name in (*coordinates, *COUNTRIES.values())}
-    for region, country, city in read_roster(lines):
-        country = country_names.setdefault(country.casefold(), country)
+    country_names = {country_key(name): name for name in (*coordinates, *COUNTRIES.values())}
+    for region, name, city in read_roster(lines):
+        country = country_key(name)
+        country_names.setdefault(country, name)
         counts[region][country] += 1
         if city:
             city_counts[region][city_key(country, city)] += 1
@@ -74,16 +79,17 @@ def globe_project(lines, existing_regions=()):
         (city_key(city["country"], city.get("roster_city", city["name"])), city)
         for region in existing_regions for city in region.get("cities", [])
     )
-    featured = {row["country"]: row["featured_names"]
+    featured = {country_key(row["country"]): row["featured_names"]
                 for region in existing_regions for row in region["countries"] if "featured_names" in row}
     regions = []
     for key, (name, lat, lon) in REGIONS.items():
         if counts[key]:
-            countries = [{"country": c, "count": n} for c, n in
-                         sorted(counts[key].items(), key=lambda row: (-row[1], row[0]))]
-            for row in countries:
-                if row["country"] in featured:
-                    row["featured_names"] = featured[row["country"]]
+            countries = []
+            for country, count in sorted(counts[key].items(), key=lambda row: (-row[1], country_names[row[0]])):
+                row = {"country": country_names[country], "count": count}
+                if country in featured:
+                    row["featured_names"] = featured[country]
+                countries.append(row)
             cities = [{**cities_by_key[city], "count": n}
                       for city, n in city_counts[key].items() if city in cities_by_key]
             region = {"name": name, "lat": lat, "lon": lon, "countries": countries}

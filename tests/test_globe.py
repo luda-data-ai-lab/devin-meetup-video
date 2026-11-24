@@ -61,6 +61,23 @@ def test_roster_refresh_keeps_saved_city_names_and_coordinates(tmp_path, monkeyp
     assert refreshed[1]["countries"][0]["featured_names"] == ["James Yeon"]
 
 
+def test_roster_refresh_matches_country_totals_pins_and_featured_names_with_one_key():
+    names = ["James Yeon", "Jaden Son", "Jeongmin Lee"]
+    saved_city = {"country": "korea", "name": "Seoul Metro", "roster_city": "Seoul",
+                  "lat": 37.6, "lon": 127, "count": 9}
+    previous = [{"name": "Asia-Pacific",
+                 "countries": [{"country": "south korea", "count": 1, "featured_names": names}],
+                 "cities": [saved_city]}]
+    rows = ["Region\tCountry\tCity", "Asia-Pacific\tsouth korea\tSeoul", "\tKOREA\tSeoul",
+            "Europe\tUnited Kingdom\tLondon"]
+    scene = config.parse(globe_project(rows, previous)).scenes[0]
+    europe, asia = scene.globe["regions"]
+    assert europe["countries"] == [{"country": "United Kingdom", "count": 1}]
+    assert asia["countries"] == [{"country": "South Korea", "count": 2, "featured_names": names}]
+    assert asia["cities"] == [{**saved_city, "count": 2}]
+    assert view_at(scene, scene.duration) == pytest.approx((3, 37.57, 126.98))
+
+
 @pytest.mark.parametrize("bad", [-1, None, True, 1.5])
 def test_globe_rejects_invalid_count(bad):
     data = globe_project(ROSTER)
