@@ -75,4 +75,6 @@ The ending uses the official white Cognition and Devin logos in `assets\brand\`.
 
    The final reel is 1920×1080 at 30 fps with 48 kHz stereo AAC. Portrait clips keep their framing with side bars; spoken audio is loudness-normalized and new Korean cues are burned into the picture.
 
+For the separate version with Nader Dabit's welcome, save the supplied MP4 as `assets/footage/nader-dabit-welcome.mp4` and open **ambassadors-nader**. Nader's clip is last by default, and its order and Korean cues are editable. **Final** renders a separate file without replacing the original **ambassadors** reel. From the command line, use `python -m meetup_video render --config content/ambassadors-nader.json --out out/ambassador-reel-nader.mp4`.
+
 For direct editing, `content/ambassadors.json` uses the order of the `scenes` array. A `clip` scene has a local `video` path, optional `video_start` in source seconds, and `duration`. Its `subtitles` are `{"start": 1.36, "end": 2.5, "text": "안녕하세요"}` objects; set `subtitles_baked_in: true` and omit cues for footage that already has Korean text. To aggregate a new `Region / Country / City` TSV, run `python -m meetup_video.roster path/to/roster.tsv` and copy the generated `globe.regions` into the intro scene without replacing the clips.
