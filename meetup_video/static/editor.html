@@ -104,7 +104,11 @@ function field(obj, key, label, type="text") {
   };
   w.appendChild(el); return w;
 }
-function total() { $("#total").textContent = "총 " + cfg.scenes.reduce((a, s) => a + Number(s.duration || 0), 0) + "초"; }
+const durationFormat = new Intl.NumberFormat("ko-KR", {maximumFractionDigits: 2, useGrouping: false});
+function total() {
+  const duration = cfg.scenes.reduce((a, s) => a + Number(s.duration || 0), 0);
+  $("#total").textContent = "총 " + durationFormat.format(duration) + "초";
+}
 function globeEditor(scene, index) {
   const g = scene.globe;
   const card = document.createElement("section");
