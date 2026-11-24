@@ -52,7 +52,7 @@ def korea_names(regions):
 
 
 def orbit_position(scene, t, stops, final_fraction):
-    if "end_hold" in scene.globe:
+    if scene.globe.get("end_hold", 0) > 0:
         return min(1, max(0, t) / scene.duration) * (stops - 1 + final_fraction)
     return max(0, t) * stops / scene.duration
 

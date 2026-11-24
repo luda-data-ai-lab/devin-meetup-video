@@ -182,6 +182,16 @@ def test_orbit_holds_the_finished_map_for_three_seconds(project):
     assert renderer.frame_at(scene.timeline_duration - 1 / cfg.fps).tobytes() == start
 
 
+def test_zero_end_hold_restores_original_roster_tour_pacing():
+    scene = config.parse(globe_project(ROSTER)).scenes[0]
+    times = [0, 2, 2.7, 5.5, scene.duration]
+    original = [view_at(scene, t) for t in times]
+    scene.globe["end_hold"] = 3
+    assert view_at(scene, 2) != original[1]
+    scene.globe["end_hold"] = 0
+    assert [view_at(scene, t) for t in times] == original
+
+
 def test_globe_motion_and_frame_size():
     video = {"width": 320, "height": 180}
     renderer = Renderer(config.parse({**globe_project(ROSTER), "video": video}))
