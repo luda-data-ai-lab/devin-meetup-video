@@ -107,7 +107,8 @@ def validate_globe_region(scene_id, region):
     for city in cities:
         if not isinstance(city, dict):
             raise ConfigError(f"scene {scene_id}: each city must be an object")
-        for key in ("name", "country"):
+        keys = ("name", "country", "roster_city") if "roster_city" in city else ("name", "country")
+        for key in keys:
             value = city.get(key)
             if (not isinstance(value, str) or not value.strip()
                     or any(unicodedata.category(char) in ("Cc", "Zl", "Zp") for char in value)):

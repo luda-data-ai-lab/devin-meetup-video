@@ -1,10 +1,13 @@
+import json
+import sys
+
 import pytest
 from PIL import ImageDraw
 
 from meetup_video import config
 from meetup_video.globe import frame, view_at
 from meetup_video.render import Renderer
-from meetup_video.roster import globe_project, read_roster
+from meetup_video.roster import globe_project, main as roster_main, read_roster
 
 
 ROSTER = """Region\tCountry\tCity
@@ -22,6 +25,29 @@ def test_roster_counts_rows_not_distinct_cities():
         ("North America", [{"country": "United States", "count": 2}]),
         ("Asia-Pacific", [{"country": "South Korea", "count": 1}]),
     ]
+    [nyc] = scene.globe["regions"][0]["cities"]
+    assert (nyc["name"], nyc["count"], nyc["lat"], nyc["lon"]) == ("New York City", 2, 40.7143, -74.006)
+
+
+def test_roster_refresh_keeps_saved_city_names_and_coordinates(tmp_path, monkeypatch, capsys):
+    project = globe_project(ROSTER)
+    regions = project["scenes"][0]["globe"]["regions"]
+    city = regions[0]["cities"][0]
+    city.update(name="NYC Metro", roster_city=city["name"], lat=40.5, lon=-73.9)
+    regions[1]["countries"][0]["featured_names"] = ["James Yeon"]
+    project_path = tmp_path / "ambassadors.json"
+    project_path.write_text(json.dumps(project), encoding="utf-8")
+    tsv = tmp_path / "roster.tsv"
+    tsv.write_text("Region\tCountry\tCity\nN.A.\tUSA\tNew York\n\tUSA\tMiami, Florida\n"
+                   "\tUSA\tPortland + SF\nAsia-Pacific\tKorea\t\n", encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["roster", str(tsv), "--existing-project", str(project_path)])
+    roster_main()
+    refreshed = config.parse(json.loads(capsys.readouterr().out)).scenes[0].globe["regions"]
+    assert refreshed[0]["countries"] == [{"country": "United States", "count": 3}]
+    assert [pin["name"] for pin in refreshed[0]["cities"]] == ["Miami", "NYC Metro"]
+    assert refreshed[0]["cities"][1] == {**city, "count": 1}
+    assert "cities" not in refreshed[1]
+    assert refreshed[1]["countries"][0]["featured_names"] == ["James Yeon"]
 
 
 @pytest.mark.parametrize("bad", [-1, None, True, 1.5])

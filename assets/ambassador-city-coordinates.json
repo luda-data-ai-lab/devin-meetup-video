@@ -1,0 +1,196 @@
+{
+  "Argentina": {
+    "Buenos Aires": [-34.6131, -58.3772]
+  },
+  "Australia": {
+    "Adelaide": [-34.9287, 138.5986],
+    "Melbourne": [-37.814, 144.9633],
+    "Toowoomba": [-27.5606, 151.9539]
+  },
+  "Austria": {
+    "Vienna": [48.2085, 16.3721]
+  },
+  "Bangladesh": {
+    "Dhaka": [23.7104, 90.4074]
+  },
+  "Brazil": {
+    "Embu Guaçu": [-23.8322, -46.8114],
+    "Porto Alegre": [-30.0328, -51.2302],
+    "Rio de Janeiro": [-22.9064, -43.1822],
+    "São Paulo": [-23.5475, -46.6361]
+  },
+  "Canada": {
+    "Hamilton": [43.2501, -79.8496],
+    "Kirkland": [45.4501, -73.8659],
+    "Ottawa": [45.4112, -75.6981],
+    "Toronto": [43.6533, -79.3839],
+    "Vancouver": [49.2497, -123.1193],
+    "Waterloo": [43.4668, -80.5164]
+  },
+  "Chile": {
+    "Santiago": [-33.4569, -70.6483]
+  },
+  "China": {
+    "Hong Kong": [22.3193, 114.1694]
+  },
+  "Colombia": {
+    "Bogotá": [4.6097, -74.0817],
+    "Medellín": [6.245, -75.5715]
+  },
+  "Czech Republic": {
+    "Prague": [50.088, 14.4208]
+  },
+  "Egypt": {
+    "Cairo": [30.0626, 31.2497]
+  },
+  "El Salvador": {
+    "San Salvador": [13.6893, -89.1872]
+  },
+  "Germany": {
+    "Berlin": [52.5244, 13.4105],
+    "Hamburg": [53.5507, 9.993],
+    "Maintal": [50.15, 8.8333],
+    "Munich": [48.1374, 11.5755]
+  },
+  "Hungary": {
+    "Budapest": [47.4984, 19.0404]
+  },
+  "India": {
+    "Bengaluru": [12.9719, 77.5937],
+    "Chandigarh": [30.7363, 76.7884],
+    "Gurugram": [28.4601, 77.0263],
+    "Hyderabad": [17.384, 78.4564],
+    "Kochi": [9.9399, 76.2602],
+    "Kolkata": [22.5626, 88.363],
+    "Mumbai": [19.0728, 72.8826]
+  },
+  "Israel": {
+    "Bet Horon": [31.8761, 35.1272],
+    "Herzliya": [32.1663, 34.8254],
+    "Yavne": [31.8781, 34.7398]
+  },
+  "Italy": {
+    "Milan": [45.4643, 9.1895],
+    "Naples": [40.8522, 14.2681],
+    "Padua": [45.408, 11.8859],
+    "Palermo": [38.1166, 13.3636],
+    "Trento": [46.0679, 11.1211]
+  },
+  "Japan": {
+    "Osaka": [34.6938, 135.5011],
+    "Tokyo": [35.6895, 139.6917]
+  },
+  "Jordan": {
+    "Amman": [31.9552, 35.945]
+  },
+  "Latvia": {
+    "Riga": [56.946, 24.1059]
+  },
+  "Mexico": {
+    "Cancún": [21.1743, -86.8466],
+    "Mexico City": [19.4285, -99.1277],
+    "Monterrey": [25.6843, -100.3172],
+    "Puebla": [19.0478, -98.2072],
+    "Querétaro": [20.5881, -100.3881]
+  },
+  "Netherlands": {
+    "Almere": [52.3702, 5.2141],
+    "Amsterdam": [52.374, 4.8897]
+  },
+  "New Zealand": {
+    "Auckland": [-36.8485, 174.7635]
+  },
+  "Pakistan": {
+    "Lahore": [31.558, 74.3507],
+    "Peshawar": [34.008, 71.5785]
+  },
+  "Philippines": {
+    "Manila": [14.6042, 120.9822]
+  },
+  "Poland": {
+    "Warsaw": [52.2298, 21.0118],
+    "Wrocław": [51.1029, 17.0301]
+  },
+  "Portugal": {
+    "Lisbon": [38.7251, -9.1498]
+  },
+  "Romania": {
+    "Iași": [47.1667, 27.6]
+  },
+  "Saudi Arabia": {
+    "Riyadh": [24.6877, 46.7219]
+  },
+  "Serbia": {
+    "Novi Sad": [45.2517, 19.8369]
+  },
+  "Singapore": {
+    "Singapore": [1.2897, 103.8501]
+  },
+  "South Africa": {
+    "Cape Town": [-33.9258, 18.4232]
+  },
+  "South Korea": {
+    "Seoul": [37.566, 126.9784]
+  },
+  "Spain": {
+    "Barcelona": [41.3888, 2.159]
+  },
+  "Sri Lanka": {
+    "Colombo": [6.9355, 79.8487]
+  },
+  "Switzerland": {
+    "Zurich": [47.3667, 8.55]
+  },
+  "Taiwan": {
+    "Taipei": [25.0531, 121.5264]
+  },
+  "Thailand": {
+    "Bangkok": [13.754, 100.5014]
+  },
+  "Tunisia": {
+    "Hammamet": [36.4, 10.6167]
+  },
+  "Turkey": {
+    "Istanbul": [41.0138, 28.9497]
+  },
+  "Uganda": {
+    "Kampala": [0.3163, 32.5822]
+  },
+  "United Arab Emirates": {
+    "Abu Dhabi": [24.4512, 54.397],
+    "Dubai": [25.0772, 55.3093]
+  },
+  "United Kingdom": {
+    "Birmingham": [52.4814, -1.8998],
+    "London": [51.5085, -0.1257],
+    "Manchester": [53.4809, -2.2374],
+    "Oxford": [51.7522, -1.256]
+  },
+  "United States": {
+    "Atlanta": [33.749, -84.388],
+    "Blairsville": [34.8762, -83.9582],
+    "Boston": [42.3584, -71.0598],
+    "Charlotte": [35.2271, -80.8431],
+    "Chicago": [41.85, -87.65],
+    "Cincinnati": [39.1271, -84.5144],
+    "Denver": [39.7392, -104.9847],
+    "Greensboro": [36.0726, -79.792],
+    "Greenville": [34.8526, -82.394],
+    "Houston": [29.7633, -95.3633],
+    "Irvine": [33.6695, -117.8231],
+    "Ithaca": [42.4406, -76.4966],
+    "Los Angeles": [34.0522, -118.2437],
+    "Miami": [25.7743, -80.1937],
+    "New York City": [40.7143, -74.006],
+    "Phoenix": [33.4484, -112.074],
+    "San Diego": [32.7157, -117.1647],
+    "San Francisco": [37.7749, -122.4194],
+    "Stanford": [37.4241, -122.1661],
+    "Washington DC": [38.9072, -77.0369],
+    "Waterford": [42.7926, -73.6812],
+    "West Lafayette": [40.4259, -86.9081]
+  },
+  "Vietnam": {
+    "Ho Chi Minh City": [10.823, 106.6296]
+  }
+}

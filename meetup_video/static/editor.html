@@ -132,6 +132,10 @@ function cityEditor(region, index, regionIndex) {
         const input = control.querySelector("input");
         input.id = `city-${index}-${regionIndex}-${i}-${key}`;
         control.querySelector("label").htmlFor = input.id;
+        if (key === "name") {
+          const rosterName = city.roster_city ?? city.name;
+          input.addEventListener("input", () => { if (rosterName) city.roster_city = rosterName; });
+        }
         if (type === "number") {
           input.step = key === "count" ? "1" : "any";
           input.oninput = () => { city[key] = Number.isNaN(input.valueAsNumber) ? null : input.valueAsNumber; dirty = true; };
