@@ -29,6 +29,16 @@ def test_roster_counts_rows_not_distinct_cities():
     assert (nyc["name"], nyc["count"], nyc["lat"], nyc["lon"]) == ("New York City", 2, 40.7143, -74.006)
 
 
+def test_roster_uses_one_country_row_for_case_variants():
+    rows = ["Region\tCountry\tCity", "N.A.\tunited states\tNYC", "\tUnited States\tNew York",
+            "\tExample Islands\t", "\tEXAMPLE ISLANDS\t"]
+    [region] = globe_project(rows)["scenes"][0]["globe"]["regions"]
+    assert region["countries"] == [{"country": "Example Islands", "count": 2},
+                                   {"country": "United States", "count": 2}]
+    [city] = region["cities"]
+    assert (city["name"], city["country"], city["count"]) == ("New York City", "United States", 2)
+
+
 @pytest.mark.parametrize("saved_country", ["United States", "USA"])
 def test_roster_refresh_keeps_saved_city_names_and_coordinates(tmp_path, monkeypatch, capsys, saved_country):
     project = globe_project(ROSTER)

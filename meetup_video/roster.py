@@ -59,11 +59,13 @@ def read_roster(lines):
 def globe_project(lines, existing_regions=()):
     counts = {region: Counter() for region in REGIONS}
     city_counts = {region: Counter() for region in REGIONS}
+    coordinates = json.loads(CITY_COORDINATES.read_text(encoding="utf-8"))
+    country_names = {name.casefold(): name for name in (*coordinates, *COUNTRIES.values())}
     for region, country, city in read_roster(lines):
+        country = country_names.setdefault(country.casefold(), country)
         counts[region][country] += 1
         if city:
             city_counts[region][city_key(country, city)] += 1
-    coordinates = json.loads(CITY_COORDINATES.read_text(encoding="utf-8"))
     cities_by_key = {
         city_key(country, city): {"name": city, "country": country, "lat": lat, "lon": lon}
         for country, known in coordinates.items() for city, (lat, lon) in known.items()
