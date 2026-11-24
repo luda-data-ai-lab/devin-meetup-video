@@ -94,6 +94,23 @@ def validate_globe_region(scene_id, region):
         coord = region.get(key)
         if type(coord) not in (int, float) or not -limit <= coord <= limit:
             raise ConfigError(f"scene {scene_id}: globe region {key} must be between {-limit} and {limit}")
+    cities = region.get("cities", [])
+    if not isinstance(cities, list):
+        raise ConfigError(f"scene {scene_id}: globe cities must be a list")
+    for city in cities:
+        if not isinstance(city, dict):
+            raise ConfigError(f"scene {scene_id}: each city must be an object")
+        for key in ("name", "country"):
+            value = city.get(key)
+            if (not isinstance(value, str) or not value.strip()
+                    or any(unicodedata.category(char) in ("Cc", "Zl", "Zp") for char in value)):
+                raise ConfigError(f"scene {scene_id}: city {key} must be nonblank single-line text")
+        if type(city.get("count")) is not int or city["count"] < 0:
+            raise ConfigError(f"scene {scene_id}: city count must be a nonnegative integer")
+        for key, limit in (("lat", 90), ("lon", 180)):
+            coord = city.get(key)
+            if type(coord) not in (int, float) or not -limit <= coord <= limit:
+                raise ConfigError(f"scene {scene_id}: city {key} must be between {-limit} and {limit}")
     for row in countries:
         if not isinstance(row, dict):
             raise ConfigError(f"scene {scene_id}: globe country must be an object")

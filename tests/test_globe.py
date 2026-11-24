@@ -115,6 +115,32 @@ def test_orbit_region_pins_and_seoul_name_zoom(monkeypatch):
     assert all(sizes[0][name] < sizes[1][name] for name in names)
 
 
+def test_regional_tour_draws_editable_city_pins_only_on_map(monkeypatch):
+    scene = config.load(config.ROOT / "content" / "ambassadors.json").scenes[0]
+    europe = next(region for region in scene.globe["regions"] if region["name"] == "Europe")
+    london = next(city for city in europe["cities"] if city["name"] == "London")
+    london["name"], london["count"] = "Greater London", 5
+    expected = "Greater London · 5"
+    labels = []
+    draw_text = ImageDraw.ImageDraw.text
+
+    def capture(draw, xy, text, *args, **kwargs):
+        labels.append((text, xy[0]))
+        return draw_text(draw, xy, text, *args, **kwargs)
+
+    monkeypatch.setattr(ImageDraw.ImageDraw, "text", capture)
+    frame(scene, 0, 480, 270)
+    assert not any(text == expected for text, _ in labels)
+    labels.clear()
+    frame(scene, 7, 480, 270)
+    assert [x for text, x in labels if text == expected and x > 224]
+    assert any(text == "United Kingdom" and x < 224 for text, x in labels)
+    assert not any("주요 도시" in text or "CITY PIN" in text for text, _ in labels)
+    labels.clear()
+    frame(scene, 15.7, 480, 270)
+    assert not any(text == expected for text, _ in labels)
+
+
 def test_globe_motion_and_frame_size():
     video = {"width": 320, "height": 180}
     renderer = Renderer(config.parse({**globe_project(ROSTER), "video": video}))

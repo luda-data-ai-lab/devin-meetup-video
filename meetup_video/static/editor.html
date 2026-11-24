@@ -55,6 +55,12 @@ video{width:100%;margin-top:10px;border-radius:8px}
 .globe-countries{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px 24px;padding:4px 12px 10px}
 .globe-countries label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0;font-weight:500}
 .globe-countries input{width:78px;flex:none;color:var(--globe-accent);text-align:right;font-variant-numeric:tabular-nums}
+.globe-cities{border-top:1px solid #2a3350;padding:0 12px 12px}
+.globe-cities summary{padding-inline:0}
+.globe-city-rows{max-height:330px;overflow:auto;margin-bottom:8px}
+.globe-city-row{display:grid;grid-template-columns:repeat(2,minmax(0,1.35fr)) repeat(3,minmax(0,1fr)) auto;gap:8px;align-items:end;padding:8px 4px;border-bottom:1px solid #2a3350}
+.globe-city-row input{width:100%;min-width:0}
+@media (max-width:720px){.globe-city-row{grid-template-columns:repeat(3,minmax(0,1fr))}.globe-city-row>div:nth-child(-n+2){grid-column:1/-1}.globe-city-row button{justify-self:start}}
 @media (max-width:420px){.globe-banner{padding:12px}.globe-banner h3{font-size:15px}.globe-total{font-size:20px}.globe-countries{grid-template-columns:1fr}}
 .clip-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .clip-head h3{margin:0}
@@ -109,6 +115,44 @@ function total() {
   const duration = cfg.scenes.reduce((a, s) => a + Number(s.duration || 0), 0);
   $("#total").textContent = "총 " + durationFormat.format(duration) + "초";
 }
+function cityEditor(region, index, regionIndex) {
+  const panel = document.createElement("details"); panel.className = "globe-cities";
+  panel.innerHTML = `<summary>도시 핀 · City pins</summary>
+    <p class="globe-help">City edits do not change country or worldwide totals. 도시를 수정해도 국가·전 세계 합계는 그대로입니다.</p>
+    <div class="globe-city-rows"></div><button type="button" class="alt">+ 도시 추가 Add city</button>`;
+  const rows = panel.querySelector(".globe-city-rows");
+  const cities = region.cities ?? [];
+  function drawRows() {
+    rows.replaceChildren(...cities.map((city, i) => {
+      const row = document.createElement("div"); row.className = "globe-city-row";
+      for (const [key, name, type] of [["name","도시 City"],["country","국가 Country"],["count","인원 Count","number"],
+                                        ["lat","위도 Lat","number"],["lon","경도 Lon","number"]]) {
+        const control = field(city, key, name, type);
+        const input = control.querySelector("input");
+        input.id = `city-${index}-${regionIndex}-${i}-${key}`;
+        control.querySelector("label").htmlFor = input.id;
+        if (type === "number") {
+          input.step = key === "count" ? "1" : "any";
+          input.oninput = () => { city[key] = Number.isNaN(input.valueAsNumber) ? null : input.valueAsNumber; dirty = true; };
+        }
+        row.append(control);
+      }
+      const remove = document.createElement("button"); remove.type = "button"; remove.className = "alt";
+      remove.textContent = "Remove"; remove.setAttribute("aria-label", `Remove city ${i + 1}`);
+      remove.onclick = () => { cities.splice(i, 1); dirty = true; drawRows(); };
+      row.append(remove); return row;
+    }));
+  }
+  panel.querySelector("button").onclick = () => {
+    region.cities = cities;
+    cities.push({name:"", country:"", count:1, lat:region.lat, lon:region.lon});
+    dirty = true; drawRows();
+    const input = rows.lastElementChild.querySelector("input");
+    input.focus();
+  };
+  drawRows();
+  return panel;
+}
 function globeEditor(scene, index) {
   const g = scene.globe;
   const card = document.createElement("section");
@@ -149,6 +193,7 @@ function globeEditor(scene, index) {
       names.style.padding = "4px 12px 10px";
       details.append(names);
     }
+    details.append(cityEditor(region, index, i));
   });
   updateCounts();
   return card;

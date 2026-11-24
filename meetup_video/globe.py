@@ -90,6 +90,7 @@ def frame(scene, t, width, height):
         phase = t * (len(regions) + 2) / scene.duration - i
         p = max(0, min(1, phase / 0.72))
         zoom = p * p * (3 - 2 * p)
+    cities = []
     if worldwide:
         name, count = "전 세계", sum(totals)
         rows = [(r["name"], n) for r, n in zip(regions, totals)]
@@ -97,11 +98,14 @@ def frame(scene, t, width, height):
         region = regions[i - 1]
         name, count = region["name"], totals[i - 1]
         rows = [(row["country"], row["count"]) for row in region["countries"]]
+        cities = sorted((city for city in region.get("cities", []) if city["count"]),
+                        key=lambda city: (-city["count"], city["name"]))
     k = min(width / 1920, height / 1080)
     x0, y0 = (width - 1920 * k) / 2, (height - 1080 * k) / 2
     xy = lambda x, y: (round(x0 + x * k), round(y0 + y * k))
     rect = lambda x1, y1, x2, y2: (*xy(x1, y1), *xy(x2, y2))
     bg, fg, muted, accent, line = "#0a1424", "#f0faf8", "#a9c9d0", "#76f7ce", "#314d5d"
+    city_color = "#ffd48a"
     image = Image.new("RGBA", (width, height), bg)
     d = ImageDraw.Draw(image)
 
@@ -127,6 +131,11 @@ def frame(scene, t, width, height):
                   width=max(1, round((3 if active else 2) * k)))
         d.ellipse(rect(x - 4, y - 4, x + 4, y + 4), fill=color)
 
+    def overlaps(box, occupied):
+        left, top, right, bottom = box
+        return any(left < bx2 and right > bx1 and top < by2 and bottom > by1
+                   for bx1, by1, bx2, by2 in occupied)
+
     def region_pins(cx, cy, r, view_lat, view_lon, region_indices):
         pins = []
         for index in region_indices:
@@ -146,8 +155,7 @@ def frame(scene, t, width, height):
                 box = (left, top, left + badge_w, top + badge_h)
                 if not (924 <= left and box[2] <= 1870 and 84 <= top and box[3] <= 934):
                     continue
-                if any(left < right and box[2] > bx and top < bottom and box[3] > by
-                       for bx, by, right, bottom in occupied):
+                if overlaps(box, occupied):
                     continue
                 occupied.append(box)
                 end_x = min(max(x, left), box[2])
@@ -158,6 +166,38 @@ def frame(scene, t, width, height):
                 label(left + badge_w / 2, top + badge_h / 2, totals[index], 27, color, "mm", mono=True)
                 break
             dot(x, y, active)
+        return occupied
+
+    def city_pins(cx, cy, r, occupied):
+        mapped = []
+        for city in cities:
+            pos = project_pin(city["lat"], city["lon"], lat, lon)
+            if pos is not None:
+                mapped.append((city, cx + r * pos[0], cy + r * pos[1]))
+        mapped = mapped[:7]
+        occupied.extend((x - 9, y - 9, x + 9, y + 9) for _, x, y in mapped)
+        for city, x, y in mapped:
+            title = f'{city["name"]} · {city["count"]}'
+            w, h = 188, 32
+            sides = (918, 1674) if x < cx else (1674, 918)
+            target = cy + (y - cy) * 1.45
+            offsets = (0, -38, 38, -76, 76, -114, 114, -152, 152)
+            for left, offset in ((left, shift) for left in sides for shift in offsets):
+                top = target + offset - h / 2
+                box = (left, top, left + w, top + h)
+                if not (914 <= left and box[2] <= 1868 and 118 <= top and box[3] <= 900):
+                    continue
+                if overlaps(box, occupied):
+                    continue
+                occupied.append(box)
+                end_x = min(max(x, left), box[2])
+                end_y = min(max(y, top), box[3])
+                d.line((*xy(x, y), *xy(end_x, end_y)), fill="#b89a6e", width=max(1, round(k)))
+                d.rounded_rectangle(rect(*box), radius=max(1, round(5 * k)), fill=bg, outline="#b89a6e",
+                                    width=max(1, round(k)))
+                label(left + w / 2, top + h / 2, title, 19, city_color, "mm", max_width=w - 12)
+                break
+            d.ellipse(rect(x - 5, y - 5, x + 5, y + 5), fill=city_color, outline=bg)
 
     def roster(x, y, columns, col_width, row_height):
         per_col = math.ceil(len(rows) / columns)
@@ -185,7 +225,9 @@ def frame(scene, t, width, height):
             dot(cx + radius * pos[0], cy + radius * pos[1], True)
     else:
         globe(cx, cy, radius, lat, lon)
-        region_pins(cx, cy, radius, lat, lon, range(len(regions)))
+        occupied = region_pins(cx, cy, radius, lat, lon, range(len(regions)))
+        if cities:
+            city_pins(cx, cy, radius, occupied)
     label(100, 88, "DEVIN MEETUP SEOUL  /  AMBASSADOR NETWORK", 25, accent, mono=True)
     if korea:
         label(100, 209, "대한민국", 71, max_width=800)
