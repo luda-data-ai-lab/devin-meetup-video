@@ -192,7 +192,9 @@ class Renderer:
         if scene.id not in self._videos:
             self._videos[scene.id] = VideoSource(self.clip_path(scene), scene.video_start,
                                                 (self.W, self.H), self.cfg.fps, contain=True)
-        frame = self._videos[scene.id].get(int(round(t * self.cfg.fps))).convert("RGBA")
+        # Keep fractional clip starts on a consistent frame; tolerate round-off at frame boundaries.
+        index = math.floor(t * self.cfg.fps + 1e-9)
+        frame = self._videos[scene.id].get(index).convert("RGBA")
         cue = next((c for c in scene.subtitles if c["start"] <= t < c["end"]), None)
         if cue:
             card = subtitle_card(cue["text"], self.W, self.H, scene.subtitle_font_size)
